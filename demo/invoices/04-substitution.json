@@ -1,0 +1,29 @@
+{
+  "_scenario": "Cabernet invoiced but Merlot delivered (substitution on GRN)",
+  "supplier_name": "Cape Cellars Wine Merchants (fictional)",
+  "supplier_vat": "4000000044",
+  "invoice_number": "CCW-11902",
+  "invoice_date": "20 September 2026",
+  "due_date": "20 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "Cape Sauvignon Blanc",
+      "volume": "750ml",
+      "quantity": 24,
+      "unit_price": 78,
+      "line_total": 1872
+    },
+    {
+      "line_number": 2,
+      "product": "Cape Cabernet Sauvignon",
+      "volume": "750ml",
+      "quantity": 24,
+      "unit_price": 92,
+      "line_total": 2208
+    }
+  ],
+  "subtotal": 4080,
+  "vat_amount": 612,
+  "total_due": 4692
+}

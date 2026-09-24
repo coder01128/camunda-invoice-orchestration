@@ -55,6 +55,11 @@ Do not start on the real processes above until all five pass. Report which passe
 - **Environment**: Windows. Windows terminal syntax only, no Unix-isms.
 - **c8ctl is alpha software** — commands and flags drift from the docs between releases. Before running a command you're not certain of, run `c8ctl --help` or `c8ctl <command> --help` and use what it actually reports, not what a doc or an earlier session says.
 
+## Repo ↔ Web Modeler (Git sync, set up 24 Sep 2026)
+- `processes/` is Git-synced with Brad's Web Modeler project "Restaurant Invoice Orchestration" (branch `main`, path `processes`). Only deployables (.bpmn/.dmn/.form) go there.
+- Always `git pull` before editing anything in `processes/` — Brad may have committed from Web Modeler.
+- After pushing changes to `processes/`, tell Brad to click **Sync with GitHub** in Web Modeler.
+
 ## Rules
 - Never invent DMN thresholds, approval limits, or any business figure — leave it as an open variable and name what's needed to fill it in.
 - Never claim confirmed Oracle/Simphony integration until that's actually verified with the restaurant's IT — treat POS API access as unconfirmed until stated otherwise.

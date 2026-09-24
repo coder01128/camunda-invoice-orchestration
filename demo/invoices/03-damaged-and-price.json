@@ -1,0 +1,37 @@
+{
+  "_scenario": "2 gin damaged on GRN; vodka billed R172 vs PO R165",
+  "supplier_name": "Jozi Spirits Distributors (fictional)",
+  "supplier_vat": "4000000033",
+  "invoice_number": "JSD-77188",
+  "invoice_date": "19 September 2026",
+  "due_date": "19 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "Jozi Dry Gin",
+      "volume": "750ml",
+      "quantity": 12,
+      "unit_price": 189,
+      "line_total": 2268
+    },
+    {
+      "line_number": 2,
+      "product": "Jozi Vodka",
+      "volume": "750ml",
+      "quantity": 12,
+      "unit_price": 172,
+      "line_total": 2064
+    },
+    {
+      "line_number": 3,
+      "product": "Jozi Blended Whisky",
+      "volume": "750ml",
+      "quantity": 6,
+      "unit_price": 245,
+      "line_total": 1470
+    }
+  ],
+  "subtotal": 5802,
+  "vat_amount": 870.3,
+  "total_due": 6672.3
+}

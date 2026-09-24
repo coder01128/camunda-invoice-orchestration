@@ -1,0 +1,21 @@
+{
+  "_scenario": "Stated total does not equal subtotal + VAT",
+  "supplier_name": "Karoo Craft Brewing (fictional)",
+  "supplier_vat": "4000000022",
+  "invoice_number": "KCB-3350",
+  "invoice_date": "21 September 2026",
+  "due_date": "21 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "Karoo Lager",
+      "volume": "340ml",
+      "quantity": 24,
+      "unit_price": 16.9,
+      "line_total": 405.6
+    }
+  ],
+  "subtotal": 405.6,
+  "vat_amount": 60.84,
+  "total_due": 500
+}

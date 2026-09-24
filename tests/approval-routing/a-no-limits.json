@@ -1,1 +1,1 @@
-{"amount":5,"category":"test","flagReason":"smoke: no limits supplied"}
+{"amount":5,"category":"test","flagReason":"smoke: explicit empty limits (fail-safe)","approvalLimits":{}}

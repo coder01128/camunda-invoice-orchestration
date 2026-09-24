@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_goods-receipt-match" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Claude Code" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="goods-receipt-match" name="Goods Receipt 3-Way Match" isExecutable="true">
+    <bpmn:documentation>Call activity. In: invoice (extractor format), optional mockDataBaseUrl. Out: matchResult {status MATCHED|DISCREPANCY|NO_PO, poNumber, grnNumber, outlet, discrepancies[], varianceAmount, summary}. Broadcasts signal stock-level-changed with received quantities.</bpmn:documentation>
+    <bpmn:startEvent id="Start_match" name="Invoice to match">
+      <bpmn:outgoing>Flow_Start_match_FetchErp</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="FetchErp" name="Fetch POs &#38; GRNs (mock ERP)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:documentation>REST connector GET &lt;mockDataBaseUrl&gt;/erp.json. Stands in for the purchasing system API.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/erp.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={erpSuppliers: response.body.suppliers, erpPurchaseOrders: response.body.purchaseOrders, erpGoodsReceipts: response.body.goodsReceipts, erpProducts: response.body.products}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_match_FetchErp</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchErp_IdentifyPo</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="IdentifyPo" name="Identify supplier &#38; PO">
+      <bpmn:documentation>Invoices carry no PO number, so the PO is found via supplier VAT number -&gt; open PO for that supplier.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  supplier: (erpSuppliers[item.supplier_vat = invoice.supplier_vat])[1],&#10;  po: if invoice.po_number != null then (erpPurchaseOrders[item.po_number = invoice.po_number])[1]&#10;      else if supplier = null then null&#10;      else (erpPurchaseOrders[item.supplier_id = supplier.supplier_id and item.status = &#34;OPEN&#34;])[1],&#10;  grn: if po = null then null else (erpGoodsReceipts[item.po_number = po.po_number])[1]&#10;}" resultVariable="matchCtx" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchErp_IdentifyPo</bpmn:incoming>
+      <bpmn:outgoing>Flow_IdentifyPo_Gw_po</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gw_po" name="PO found?" default="Flow_Gw_po_NoPoResult">
+      <bpmn:incoming>Flow_IdentifyPo_Gw_po</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_po_CompareLines</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_po_NoPoResult</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="CompareLines" name="Compare invoice, PO &#38; GRN lines">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=for l in invoice.items return {&#10;  product: l.product, volume: l.volume,&#10;  lineSku: (erpProducts[item.product = l.product and item.volume = l.volume].sku)[1],&#10;  poLine: if lineSku = null then null else (matchCtx.po.lines[item.sku = lineSku])[1],&#10;  grnLine: if lineSku = null or matchCtx.grn = null then null else (matchCtx.grn.lines[item.sku = lineSku])[1],&#10;  invoicedQty: l.quantity, invoicedPrice: l.unit_price,&#10;  orderedQty: if poLine = null then 0 else poLine.quantity,&#10;  poPrice: if poLine = null then null else poLine.unit_price,&#10;  receivedQty: if grnLine = null then 0 else grnLine.received,&#10;  damagedQty: if grnLine = null then 0 else grnLine.damaged,&#10;  acceptedQty: receivedQty - damagedQty,&#10;  substitutedWith: if grnLine = null then null else grnLine.substituted_with,&#10;  issues: [&#10;    if poLine = null then &#34;NOT_ON_PO&#34; else null,&#10;    if poLine != null and invoicedQty &#62; orderedQty then &#34;QTY_ABOVE_PO&#34; else null,&#10;    if substitutedWith != null then &#34;SUBSTITUTED&#34; else null,&#10;    if damagedQty &#62; 0 then &#34;DAMAGED&#34; else null,&#10;    if poLine != null and substitutedWith = null and receivedQty &#60; invoicedQty then &#34;SHORT_DELIVERED&#34; else null,&#10;    if poPrice != null and abs(invoicedPrice - poPrice) &#62; 0.005 then &#34;PRICE_VARIANCE&#34; else null&#10;  ][item != null],&#10;  varianceAmount: decimal(max([0, invoicedQty - acceptedQty]) * invoicedPrice&#10;                  + (if poPrice = null then 0 else max([0, invoicedPrice - poPrice]) * min([invoicedQty, acceptedQty])), 2)&#10;}" resultVariable="lineChecks" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_po_CompareLines</bpmn:incoming>
+      <bpmn:outgoing>Flow_CompareLines_Summarise</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:scriptTask id="Summarise" name="Summarise match">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  status: if count(lineChecks[count(item.issues) &#62; 0]) = 0 then &#34;MATCHED&#34; else &#34;DISCREPANCY&#34;,&#10;  supplierId: matchCtx.supplier.supplier_id,&#10;  poNumber: matchCtx.po.po_number,&#10;  grnNumber: matchCtx.grn.grn_number,&#10;  outlet: matchCtx.po.outlet,&#10;  discrepancies: for d in lineChecks[count(item.issues) &#62; 0] return&#10;    {sku: d.lineSku, product: d.product, issues: d.issues, invoicedQty: d.invoicedQty, orderedQty: d.orderedQty,&#10;     receivedQty: d.receivedQty, acceptedQty: d.acceptedQty, invoicedPrice: d.invoicedPrice, poPrice: d.poPrice,&#10;     substitutedWith: d.substitutedWith, varianceAmount: d.varianceAmount},&#10;  varianceAmount: decimal(sum(for d in lineChecks return d.varianceAmount), 2),&#10;  summary: if count(lineChecks[count(item.issues) &#62; 0]) = 0 then &#34;Invoice matches PO and goods receipt&#34;&#10;           else string join(for d in lineChecks[count(item.issues) &#62; 0] return d.product + &#34;: &#34; + string join(d.issues, &#34;, &#34;), &#34;; &#34;)&#10;}" resultVariable="matchResult" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CompareLines_Summarise</bpmn:incoming>
+      <bpmn:outgoing>Flow_Summarise_StockReceived</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:intermediateThrowEvent id="StockReceived" name="Stock received">
+      <bpmn:documentation>Broadcasts accepted quantities so Stock Reorder can check reorder points.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=for c in lineChecks[item.lineSku != null] return {sku: c.lineSku, qtyChange: c.acceptedQty}" target="stockMovements" />
+          <zeebe:input source="=matchResult.outlet" target="outlet" />
+          <zeebe:input source="=&#34;goods-receipt&#34;" target="source" />
+          <zeebe:input source="=matchResult.poNumber" target="sourceRef" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Summarise_StockReceived</bpmn:incoming>
+      <bpmn:outgoing>Flow_StockReceived_End_matched</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="StockReceived_def" signalRef="Signal_stock-level-changed" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_matched" name="Match complete">
+      <bpmn:incoming>Flow_StockReceived_End_matched</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="NoPoResult" name="Record no-PO result">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={status: &#34;NO_PO&#34;, supplierId: matchCtx.supplier.supplier_id, poNumber: null, grnNumber: null, outlet: null,&#10;  discrepancies: [], varianceAmount: invoice.subtotal,&#10;  summary: if matchCtx.supplier = null then &#34;Supplier VAT &#34; + invoice.supplier_vat + &#34; not found in supplier master&#34;&#10;           else &#34;No open purchase order for &#34; + matchCtx.supplier.supplier_name}" resultVariable="matchResult" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_po_NoPoResult</bpmn:incoming>
+      <bpmn:outgoing>Flow_NoPoResult_End_noPo</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="End_noPo" name="No PO found">
+      <bpmn:incoming>Flow_NoPoResult_End_noPo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_match_FetchErp" sourceRef="Start_match" targetRef="FetchErp" />
+    <bpmn:sequenceFlow id="Flow_FetchErp_IdentifyPo" sourceRef="FetchErp" targetRef="IdentifyPo" />
+    <bpmn:sequenceFlow id="Flow_IdentifyPo_Gw_po" sourceRef="IdentifyPo" targetRef="Gw_po" />
+    <bpmn:sequenceFlow id="Flow_Gw_po_CompareLines" name="yes" sourceRef="Gw_po" targetRef="CompareLines">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=matchCtx.po != null</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_po_NoPoResult" name="no" sourceRef="Gw_po" targetRef="NoPoResult" />
+    <bpmn:sequenceFlow id="Flow_CompareLines_Summarise" sourceRef="CompareLines" targetRef="Summarise" />
+    <bpmn:sequenceFlow id="Flow_Summarise_StockReceived" sourceRef="Summarise" targetRef="StockReceived" />
+    <bpmn:sequenceFlow id="Flow_StockReceived_End_matched" sourceRef="StockReceived" targetRef="End_matched" />
+    <bpmn:sequenceFlow id="Flow_NoPoResult_End_noPo" sourceRef="NoPoResult" targetRef="End_noPo" />
+  </bpmn:process>
+  <bpmn:signal id="Signal_stock-level-changed" name="stock-level-changed" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_goods-receipt-match">
+    <bpmndi:BPMNPlane id="BPMNPlane_goods-receipt-match" bpmnElement="goods-receipt-match">
+      <bpmndi:BPMNShape id="Start_match_di" bpmnElement="Start_match">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchErp_di" bpmnElement="FetchErp">
+        <dc:Bounds x="320" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="IdentifyPo_di" bpmnElement="IdentifyPo">
+        <dc:Bounds x="490" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_po_di" bpmnElement="Gw_po" isMarkerVisible="true">
+        <dc:Bounds x="685" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CompareLines_di" bpmnElement="CompareLines">
+        <dc:Bounds x="830" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Summarise_di" bpmnElement="Summarise">
+        <dc:Bounds x="1000" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StockReceived_di" bpmnElement="StockReceived">
+        <dc:Bounds x="1202" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_matched_di" bpmnElement="End_matched">
+        <dc:Bounds x="1372" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NoPoResult_di" bpmnElement="NoPoResult">
+        <dc:Bounds x="830" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_noPo_di" bpmnElement="End_noPo">
+        <dc:Bounds x="1032" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_match_FetchErp_di" bpmnElement="Flow_Start_match_FetchErp">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="320" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchErp_IdentifyPo_di" bpmnElement="Flow_FetchErp_IdentifyPo">
+        <di:waypoint x="420" y="150" />
+        <di:waypoint x="490" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_IdentifyPo_Gw_po_di" bpmnElement="Flow_IdentifyPo_Gw_po">
+        <di:waypoint x="590" y="150" />
+        <di:waypoint x="685" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_po_CompareLines_di" bpmnElement="Flow_Gw_po_CompareLines">
+        <di:waypoint x="735" y="150" />
+        <di:waypoint x="830" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_po_NoPoResult_di" bpmnElement="Flow_Gw_po_NoPoResult">
+        <di:waypoint x="710" y="175" />
+        <di:waypoint x="710" y="290" />
+        <di:waypoint x="830" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CompareLines_Summarise_di" bpmnElement="Flow_CompareLines_Summarise">
+        <di:waypoint x="930" y="150" />
+        <di:waypoint x="1000" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Summarise_StockReceived_di" bpmnElement="Flow_Summarise_StockReceived">
+        <di:waypoint x="1100" y="150" />
+        <di:waypoint x="1202" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StockReceived_End_matched_di" bpmnElement="Flow_StockReceived_End_matched">
+        <di:waypoint x="1238" y="150" />
+        <di:waypoint x="1372" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NoPoResult_End_noPo_di" bpmnElement="Flow_NoPoResult_End_noPo">
+        <di:waypoint x="930" y="290" />
+        <di:waypoint x="1032" y="290" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

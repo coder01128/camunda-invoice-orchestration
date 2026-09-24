@@ -1,0 +1,10 @@
+{
+  "a-no-limits":      {"tier": "director", "complete": {"decision": "approve", "approver": "test-director"}},
+  "b-auto":           {"tier": "auto"},
+  "c-manager":        {"tier": "manager",  "complete": {"decision": "approve", "approver": "test-manager"}},
+  "d-director":       {"tier": "director", "complete": {"decision": "reject",  "approver": "test-director"}},
+  "e-negative":       {"tier": "manager",  "complete": {"approved": true,      "approver": "test-manager"}},
+  "f-escalation":     {"tier": "director", "escalated": true, "complete": {"decision": "approve", "approver": "test-director"}},
+  "g-flagged":        {"tier": "manager",  "complete": {"decision": "approve", "approver": "test-manager"}},
+  "h-cluster-limits": {"tier": "auto"}
+}

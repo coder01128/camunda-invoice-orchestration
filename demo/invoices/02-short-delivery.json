@@ -1,0 +1,29 @@
+{
+  "_scenario": "Invoiced 120 lager, GRN shows 96 received",
+  "supplier_name": "Karoo Craft Brewing (fictional)",
+  "supplier_vat": "4000000022",
+  "invoice_number": "KCB-3342",
+  "invoice_date": "19 September 2026",
+  "due_date": "19 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "Karoo Lager",
+      "volume": "340ml",
+      "quantity": 120,
+      "unit_price": 16.9,
+      "line_total": 2028
+    },
+    {
+      "line_number": 2,
+      "product": "Karoo IPA",
+      "volume": "440ml",
+      "quantity": 48,
+      "unit_price": 24.5,
+      "line_total": 1176
+    }
+  ],
+  "subtotal": 3204,
+  "vat_amount": 480.6,
+  "total_due": 3684.6
+}

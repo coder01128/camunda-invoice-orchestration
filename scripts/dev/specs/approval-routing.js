@@ -1,0 +1,40 @@
+// Spec for processes/approval-routing.bpmn (shared call activity).
+const outcome = tier => `={approved: if decision = null then approved else decision = "approve", approver: approver, tier: "${tier}", escalated: ${tier === "director" ? 'approvalTier = "manager"' : "false"}, comment: comment}`;
+
+module.exports = {
+  id: "approval-routing",
+  name: "Approval Routing",
+  doc: "Shared call activity. In: amount, category, flagReason, flagged (optional), approvalLimits (optional override; default = cluster variable approvalLimits), escalationTimeout (optional, default PT24H), sourceRef/supplier (display). Out: approvalOutcome {approved, approver, tier, escalated, comment}.",
+  nodes: [
+    { id: "StartEvent_approval", type: "start", name: "Approval requested", col: 0, row: 1 },
+    { id: "ResolveLimits", type: "script", name: "Resolve approval limits", col: 1, row: 1, result: "resolvedLimits",
+      doc: "Caller-supplied approvalLimits win; otherwise the admin-managed cluster variable approvalLimits; otherwise null (fail-safe: director).",
+      expr: "=if approvalLimits != null then approvalLimits else camunda.vars.env.approvalLimits",
+      out: [["=resolvedLimits", "approvalLimits"],
+            ['=if limitsSource != null then limitsSource else if resolvedLimits = null or resolvedLimits.autoApproveMax = null then "NONE SUPPLIED - fail-safe routes to director" else if resolvedLimits.source != null then resolvedLimits.source else "cluster configuration"', "limitsSource"]] },
+    { id: "DetermineTier", type: "brt", name: "Determine approval tier", col: 2, row: 1, decision: "approval-tier", result: "approvalTier" },
+    { id: "Gateway_tier", type: "gateway", name: "Tier?", col: 3, row: 1, default: "Flow_Gateway_tier_Gateway_director_join" },
+    { id: "AutoApprove", type: "script", name: "Auto-approve", col: 4, row: 0, result: "approvalOutcome",
+      expr: '={approved: true, approver: "system:auto-approve", tier: "auto", escalated: false, comment: null}' },
+    { id: "ManagerReview", type: "user", name: "Manager review", col: 4, row: 1, form: "approval-review", group: "manager",
+      out: [[outcome("manager"), "approvalOutcome"]] },
+    { id: "ManagerTimeout", type: "boundaryTimer", name: "No response", attachedTo: "ManagerReview",
+      timer: '=if escalationTimeout != null then escalationTimeout else "PT24H"' },
+    { id: "Gateway_director_join", type: "gateway", col: 5, row: 2 },
+    { id: "DirectorReview", type: "user", name: "Director review", col: 6, row: 2, form: "approval-review", group: "director",
+      out: [[outcome("director"), "approvalOutcome"]] },
+    { id: "Gateway_merge", type: "gateway", col: 7, row: 1 },
+    { id: "EndEvent_approval", type: "end", name: "Decision made", col: 8, row: 1 },
+  ],
+  edges: [
+    { from: "StartEvent_approval", to: "ResolveLimits" }, { from: "ResolveLimits", to: "DetermineTier" },
+    { from: "DetermineTier", to: "Gateway_tier" },
+    { from: "Gateway_tier", to: "AutoApprove", name: "auto", cond: '=approvalTier = "auto"' },
+    { from: "Gateway_tier", to: "ManagerReview", name: "manager", cond: '=approvalTier = "manager"' },
+    { from: "Gateway_tier", to: "Gateway_director_join", name: "director" },
+    { from: "ManagerTimeout", to: "Gateway_director_join" },
+    { from: "Gateway_director_join", to: "DirectorReview" },
+    { from: "AutoApprove", to: "Gateway_merge" }, { from: "ManagerReview", to: "Gateway_merge" },
+    { from: "DirectorReview", to: "Gateway_merge" }, { from: "Gateway_merge", to: "EndEvent_approval" },
+  ],
+};

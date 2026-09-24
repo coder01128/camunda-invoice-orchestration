@@ -1,0 +1,45 @@
+{
+  "_scenario": "Clean 3-way match against PO-DEMO-1001",
+  "supplier_name": "Highveld Soft Drinks (fictional)",
+  "supplier_vat": "4000000011",
+  "invoice_number": "HSD-2026-0934",
+  "invoice_date": "18 September 2026",
+  "due_date": "18 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "House Cola",
+      "volume": "330ml",
+      "quantity": 48,
+      "unit_price": 12.5,
+      "line_total": 600
+    },
+    {
+      "line_number": 2,
+      "product": "Tonic Water",
+      "volume": "200ml",
+      "quantity": 48,
+      "unit_price": 9.8,
+      "line_total": 470.4
+    },
+    {
+      "line_number": 3,
+      "product": "Soda Water",
+      "volume": "200ml",
+      "quantity": 36,
+      "unit_price": 8.4,
+      "line_total": 302.4
+    },
+    {
+      "line_number": 4,
+      "product": "Orange Juice",
+      "volume": "1L",
+      "quantity": 24,
+      "unit_price": 24,
+      "line_total": 576
+    }
+  ],
+  "subtotal": 1948.8,
+  "vat_amount": 292.32,
+  "total_due": 2241.12
+}
