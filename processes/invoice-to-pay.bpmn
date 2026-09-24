@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_invoice-to-pay" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Claude Code" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="invoice-to-pay" name="Invoice-to-Pay" isExecutable="true">
+    <bpmn:documentation>Main process. Start with {invoice} in the pdf.js extractor's format (supplier_name, supplier_vat, invoice_number, invoice_date, due_date, items[], subtotal, vat_amount, total_due). Optional: paymentTimerOverride (ISO duration, demo only), mockDataBaseUrl. Validates, checks duplicates, runs the 3-way match, asks Claude (AI Agent connector) to review the lines, routes approval, waits for the due date, then hands to the creditors run. No real payment is made.</bpmn:documentation>
+    <bpmn:startEvent id="Start_invoice" name="Invoice received">
+      <bpmn:outgoing>Flow_Start_invoice_ValidateInvoice</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:scriptTask id="ValidateInvoice" name="Validate invoice">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  items: if invoice.items = null then [] else invoice.items,&#10;  lineErrors: for l in items return&#10;    if abs(l.quantity * l.unit_price - l.line_total) &#62; 0.01&#10;    then &#34;Line &#34; + string(l.line_number) + &#34; (&#34; + l.product + &#34;): quantity x unit price does not equal line total&#34; else null,&#10;  errors: concatenate(&#10;    if invoice.invoice_number = null or invoice.invoice_number = &#34;&#34; then [&#34;Missing invoice number&#34;] else [],&#10;    if invoice.supplier_vat = null or invoice.supplier_vat = &#34;&#34; then [&#34;Missing supplier VAT number&#34;] else [],&#10;    if count(items) = 0 then [&#34;No line items&#34;] else [],&#10;    lineErrors[item != null],&#10;    if abs(sum(concatenate([0], for l in items return l.line_total)) - invoice.subtotal) &#62; 0.01 then [&#34;Line totals do not add up to the subtotal&#34;] else [],&#10;    if abs(invoice.subtotal * 0.15 - invoice.vat_amount) &#62; 0.01 then [&#34;VAT is not 15% of the subtotal&#34;] else [],&#10;    if abs(invoice.subtotal + invoice.vat_amount - invoice.total_due) &#62; 0.01 then [&#34;Subtotal + VAT does not equal the total due&#34;] else []&#10;  ),&#10;  valid: count(errors) = 0&#10;}" resultVariable="validation" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_invoice_ValidateInvoice</bpmn:incoming>
+      <bpmn:outgoing>Flow_ValidateInvoice_Gw_valid</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gw_valid" name="Valid?" default="Flow_Gw_valid_QueryInvalid">
+      <bpmn:incoming>Flow_ValidateInvoice_Gw_valid</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_valid_FetchHistory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_valid_QueryInvalid</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="FetchHistory" name="Fetch invoice history (mock ERP)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/erp.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={erpInvoiceHistory: response.body.invoiceHistory}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_valid_FetchHistory</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchHistory_DuplicateCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="DuplicateCheck" name="Check for duplicate">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  wantedVat: invoice.supplier_vat,&#10;  wantedNumber: invoice.invoice_number,&#10;  supplierHistory: erpInvoiceHistory[item.supplier_vat = wantedVat],&#10;  exactMatches: supplierHistory[item.invoice_number = wantedNumber],&#10;  isDuplicate: count(exactMatches) &#62; 0&#10;}" resultVariable="duplicateCheck" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchHistory_DuplicateCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_DuplicateCheck_Gw_duplicate</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gw_duplicate" name="Duplicate?" default="Flow_Gw_duplicate_ThreeWayMatch">
+      <bpmn:incoming>Flow_DuplicateCheck_Gw_duplicate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_duplicate_End_duplicate</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_duplicate_ThreeWayMatch</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="ThreeWayMatch" name="Goods Receipt 3-Way Match">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="goods-receipt-match" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=matchResult" target="matchResult" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_duplicate_ThreeWayMatch</bpmn:incoming>
+      <bpmn:outgoing>Flow_ThreeWayMatch_AiReview</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:serviceTask id="AiReview" name="AI line-item review (Claude)" zeebe:modelerTemplate="io.camunda.connectors.agenticai.aiagent.v1" zeebe:modelerTemplateVersion="8" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNBNTZFRkYiLz4KPG1hc2sgaWQ9InBhdGgtMi1vdXRzaWRlLTFfMTg1XzYiIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9IjQiIHk9IjQiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iYmxhY2siPgo8cmVjdCBmaWxsPSJ3aGl0ZSIgeD0iNCIgeT0iNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ii8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMjAuMDEwNSAxMi4wOTg3QzE4LjQ5IDEwLjU4OTQgMTcuMTU5NCA4LjEwODE0IDE2LjE3OTkgNi4wMTEwM0MxNi4xNTIgNi4wMDQ1MSAxNi4xMTc2IDYgMTYuMDc5NCA2QzE2LjA0MTEgNiAxNi4wMDY2IDYuMDA0NTEgMTUuOTc4OCA2LjAxMTA0QzE0Ljk5OTQgOC4xMDgxNCAxMy42Njk3IDEwLjU4ODkgMTIuMTQ4MSAxMi4wOTgxQzEwLjYyNjkgMTMuNjA3MSA4LjEyNTY4IDE0LjkyNjQgNi4wMTE1NyAxNS44OTgxQzYuMDA0NzQgMTUuOTI2MSA2IDE1Ljk2MTEgNiAxNkM2IDE2LjAzODcgNi4wMDQ2OCAxNi4wNzM2IDYuMDExNDQgMTYuMTAxNEM4LjEyNTE5IDE3LjA3MjkgMTAuNjI2MiAxOC4zOTE5IDEyLjE0NzcgMTkuOTAxNkMxMy42Njk3IDIxLjQxMDcgMTQuOTk5NiAyMy44OTIgMTUuOTc5MSAyNS45ODlDMTYuMDA2OCAyNS45OTU2IDE2LjA0MTEgMjYgMTYuMDc5MyAyNkMxNi4xMTc1IDI2IDE2LjE1MTkgMjUuOTk1NCAxNi4xNzk2IDI1Ljk4OUMxNy4xNTkxIDIzLjg5MiAxOC40ODg4IDIxLjQxMSAyMC4wMDk5IDE5LjkwMjFNMjAuMDA5OSAxOS45MDIxQzIxLjUyNTMgMTguMzk4NyAyMy45NDY1IDE3LjA2NjkgMjUuOTkxNSAxNi4wODI0QzI1Ljk5NjUgMTYuMDU5MyAyNiAxNi4wMzEgMjYgMTUuOTk5N0MyNiAxNS45Njg0IDI1Ljk5NjUgMTUuOTQwMyAyNS45OTE1IDE1LjkxNzFDMjMuOTQ3NCAxNC45MzI3IDIxLjUyNTkgMTMuNjAxIDIwLjAxMDUgMTIuMDk4NyIvPgo8L21hc2s+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMjAuMDEwNSAxMi4wOTg3QzE4LjQ5IDEwLjU4OTQgMTcuMTU5NCA4LjEwODE0IDE2LjE3OTkgNi4wMTEwM0MxNi4xNTIgNi4wMDQ1MSAxNi4xMTc2IDYgMTYuMDc5NCA2QzE2LjA0MTEgNiAxNi4wMDY2IDYuMDA0NTEgMTUuOTc4OCA2LjAxMTA0QzE0Ljk5OTQgOC4xMDgxNCAxMy42Njk3IDEwLjU4ODkgMTIuMTQ4MSAxMi4wOTgxQzEwLjYyNjkgMTMuNjA3MSA4LjEyNTY4IDE0LjkyNjQgNi4wMTE1NyAxNS44OTgxQzYuMDA0NzQgMTUuOTI2MSA2IDE1Ljk2MTEgNiAxNkM2IDE2LjAzODcgNi4wMDQ2OCAxNi4wNzM2IDYuMDExNDQgMTYuMTAxNEM4LjEyNTE5IDE3LjA3MjkgMTAuNjI2MiAxOC4zOTE5IDEyLjE0NzcgMTkuOTAxNkMxMy42Njk3IDIxLjQxMDcgMTQuOTk5NiAyMy44OTIgMTUuOTc5MSAyNS45ODlDMTYuMDA2OCAyNS45OTU2IDE2LjA0MTEgMjYgMTYuMDc5MyAyNkMxNi4xMTc1IDI2IDE2LjE1MTkgMjUuOTk1NCAxNi4xNzk2IDI1Ljk4OUMxNy4xNTkxIDIzLjg5MiAxOC40ODg4IDIxLjQxMSAyMC4wMDk5IDE5LjkwMjFNMjAuMDA5OSAxOS45MDIxQzIxLjUyNTMgMTguMzk4NyAyMy45NDY1IDE3LjA2NjkgMjUuOTkxNSAxNi4wODI0QzI1Ljk5NjUgMTYuMDU5MyAyNiAxNi4wMzEgMjYgMTUuOTk5N0MyNiAxNS45Njg0IDI1Ljk5NjUgMTUuOTQwMyAyNS45OTE1IDE1LjkxNzFDMjMuOTQ3NCAxNC45MzI3IDIxLjUyNTkgMTMuNjAxIDIwLjAxMDUgMTIuMDk4NyIgZmlsbD0id2hpdGUiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yMC4wMTA1IDEyLjA5ODdDMTguNDkgMTAuNTg5NCAxNy4xNTk0IDguMTA4MTQgMTYuMTc5OSA2LjAxMTAzQzE2LjE1MiA2LjAwNDUxIDE2LjExNzYgNiAxNi4wNzk0IDZDMTYuMDQxMSA2IDE2LjAwNjYgNi4wMDQ1MSAxNS45Nzg4IDYuMDExMDRDMTQuOTk5NCA4LjEwODE0IDEzLjY2OTcgMTAuNTg4OSAxMi4xNDgxIDEyLjA5ODFDMTAuNjI2OSAxMy42MDcxIDguMTI1NjggMTQuOTI2NCA2LjAxMTU3IDE1Ljg5ODFDNi4wMDQ3NCAxNS45MjYxIDYgMTUuOTYxMSA2IDE2QzYgMTYuMDM4NyA2LjAwNDY4IDE2LjA3MzYgNi4wMTE0NCAxNi4xMDE0QzguMTI1MTkgMTcuMDcyOSAxMC42MjYyIDE4LjM5MTkgMTIuMTQ3NyAxOS45MDE2QzEzLjY2OTcgMjEuNDEwNyAxNC45OTk2IDIzLjg5MiAxNS45NzkxIDI1Ljk4OUMxNi4wMDY4IDI1Ljk5NTYgMTYuMDQxMSAyNiAxNi4wNzkzIDI2QzE2LjExNzUgMjYgMTYuMTUxOSAyNS45OTU0IDE2LjE3OTYgMjUuOTg5QzE3LjE1OTEgMjMuODkyIDE4LjQ4ODggMjEuNDExIDIwLjAwOTkgMTkuOTAyMU0yMC4wMDk5IDE5LjkwMjFDMjEuNTI1MyAxOC4zOTg3IDIzLjk0NjUgMTcuMDY2OSAyNS45OTE1IDE2LjA4MjRDMjUuOTk2NSAxNi4wNTkzIDI2IDE2LjAzMSAyNiAxNS45OTk3QzI2IDE1Ljk2ODQgMjUuOTk2NSAxNS45NDAzIDI1Ljk5MTUgMTUuOTE3MUMyMy45NDc0IDE0LjkzMjcgMjEuNTI1OSAxMy42MDEgMjAuMDEwNSAxMi4wOTg3IiBzdHJva2U9IiM0OTFEOEIiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgbWFzaz0idXJsKCNwYXRoLTItb3V0c2lkZS0xXzE4NV82KSIvPgo8L3N2Zz4K">
+      <bpmn:documentation>Camunda AI Agent connector (Anthropic). Flags possible duplicates, unusual prices/quantities, supplier mismatches. Advisory only: any flag forces human approval.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda.agenticai:aiagent:1" retries="2" />
+        <zeebe:ioMapping>
+          <zeebe:input source="anthropic" target="provider.type" />
+          <zeebe:input source="{{secrets.ANTHROPIC_API_KEY}}" target="provider.anthropic.authentication.apiKey" />
+          <zeebe:input source="claude-sonnet-5" target="provider.anthropic.model.model" />
+          <zeebe:input source="=2000" target="provider.anthropic.model.parameters.maxTokens" />
+          <zeebe:input source="=You are an accounts-payable assistant at the head office of a restaurant group. You review supplier invoices before payment and flag anything a careful accounts clerk would query. You never approve or reject an invoice: a human approver decides, and your flags are shown to them. Be specific and brief. Only flag real concerns; an empty flags list is a valid answer." target="data.systemPrompt.prompt" />
+          <zeebe:input source="=&#34;Review this supplier invoice before payment.\n\nINVOICE (extracted from the supplier PDF):\n&#34; + string(invoice)&#10; + &#34;\n\nDETERMINISTIC 3-WAY MATCH (invoice vs purchase order vs goods received note), already computed:\n&#34; + string(matchResult)&#10; + &#34;\n\nPREVIOUS INVOICES FROM THIS SUPPLIER:\n&#34; + string(duplicateCheck.supplierHistory)&#10; + &#34;\n\nCheck for: possible duplicates or near-duplicates of previous invoices (same amount, same items, consecutive numbers, close dates); unusual prices or quantities; lines that do not fit this supplier; anything else worth querying. Do not simply restate the 3-way-match findings; add a flag only if you have something new to say about them. Return JSON only.&#34;" target="data.userPrompt.prompt" />
+          <zeebe:input source="=agent.context" target="data.context" />
+          <zeebe:input source="in-process" target="data.memory.storage.type" />
+          <zeebe:input source="=20" target="data.memory.contextWindowSize" />
+          <zeebe:input source="3" target="data.limits.maxModelCalls" />
+          <zeebe:input source="json" target="data.response.format.type" />
+          <zeebe:input source="={type: &#34;object&#34;, required: [&#34;riskLevel&#34;, &#34;flags&#34;, &#34;summary&#34;], properties: {&#10;  riskLevel: {type: &#34;string&#34;, enum: [&#34;low&#34;, &#34;medium&#34;, &#34;high&#34;]},&#10;  flags: {type: &#34;array&#34;, items: {type: &#34;object&#34;, required: [&#34;type&#34;, &#34;detail&#34;], properties: {&#10;    type: {type: &#34;string&#34;, enum: [&#34;POSSIBLE_DUPLICATE&#34;, &#34;PRICE&#34;, &#34;QUANTITY&#34;, &#34;NOT_ORDERED&#34;, &#34;SUPPLIER_MISMATCH&#34;, &#34;ARITHMETIC&#34;, &#34;OTHER&#34;]},&#10;    line: {type: &#34;string&#34;}, detail: {type: &#34;string&#34;}}}},&#10;  summary: {type: &#34;string&#34;}}}" target="data.response.format.schema" />
+          <zeebe:input source="InvoiceReview" target="data.response.format.schemaName" />
+          <zeebe:input source="=false" target="data.response.includeAssistantMessage" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="8" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.v1" />
+          <zeebe:header key="resultVariable" value="agent" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ThreeWayMatch_AiReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_AiReview_PrepareApproval</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="PrepareApproval" name="Prepare approval request">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  aiFlags: if agent.responseJson.flags = null then [] else agent.responseJson.flags,&#10;  matchFlagged: matchResult.status != &#34;MATCHED&#34;,&#10;  aiFlagged: count(aiFlags) &#62; 0,&#10;  flagged: matchFlagged or aiFlagged,&#10;  reasons: concatenate(&#10;    if matchFlagged then [&#34;3-way match: &#34; + matchResult.summary + &#34; (variance R&#34; + string(matchResult.varianceAmount) + &#34;)&#34;] else [],&#10;    for f in aiFlags return &#34;AI: &#34; + f.detail&#10;  ),&#10;  flagReason: if count(reasons) = 0 then &#34;Clean 3-way match; AI review found no issues&#34; else string join(reasons, &#34; | &#34;)&#10;}" resultVariable="approvalRequest" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AiReview_PrepareApproval</bpmn:incoming>
+      <bpmn:outgoing>Flow_PrepareApproval_ApproveInvoice</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:callActivity id="ApproveInvoice" name="Approval Routing">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="approval-routing" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=invoice.total_due" target="amount" />
+          <zeebe:input source="=&#34;supplier-invoice&#34;" target="category" />
+          <zeebe:input source="=approvalRequest.flagReason" target="flagReason" />
+          <zeebe:input source="=approvalRequest.flagged" target="flagged" />
+          <zeebe:input source="=invoice.invoice_number" target="sourceRef" />
+          <zeebe:input source="=invoice.supplier_name" target="supplier" />
+          <zeebe:output source="=approvalOutcome" target="invoiceApproval" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PrepareApproval_ApproveInvoice</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApproveInvoice_Gw_approved</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="Gw_approved" name="Approved?" default="Flow_Gw_approved_QueryRejected">
+      <bpmn:incoming>Flow_ApproveInvoice_Gw_approved</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_approved_SchedulePayment</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_approved_QueryRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="SchedulePayment" name="Schedule payment">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  months: [&#34;January&#34;,&#34;February&#34;,&#34;March&#34;,&#34;April&#34;,&#34;May&#34;,&#34;June&#34;,&#34;July&#34;,&#34;August&#34;,&#34;September&#34;,&#34;October&#34;,&#34;November&#34;,&#34;December&#34;],&#10;  parts: if invoice.due_date = null then [] else split(invoice.due_date, &#34; &#34;),&#10;  monthNo: if count(parts) = 3 then index of(months, parts[2])[1] else null,&#10;  dueDate: if monthNo = null then null else date(number(parts[3]), monthNo, number(parts[1])),&#10;  payOn: if dueDate = null then today() else dueDate,&#10;  amount: invoice.total_due,&#10;  supplier: invoice.supplier_name,&#10;  invoiceNumber: invoice.invoice_number,&#10;  note: if dueDate = null then &#34;Due date could not be read from the invoice - scheduled for the next run&#34; else &#34;Scheduled for due date&#34;&#10;}" resultVariable="payment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_approved_SchedulePayment</bpmn:incoming>
+      <bpmn:outgoing>Flow_SchedulePayment_WaitForDueDate</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:intermediateCatchEvent id="WaitForDueDate" name="Due date reached">
+      <bpmn:incoming>Flow_SchedulePayment_WaitForDueDate</bpmn:incoming>
+      <bpmn:outgoing>Flow_WaitForDueDate_CreditorsRun</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="WaitForDueDate_def">
+        <bpmn:timeDate xsi:type="bpmn:tFormalExpression">=if paymentTimerOverride != null then now() + duration(paymentTimerOverride) else date and time(payment.payOn, time("09:00:00@Africa/Johannesburg"))</bpmn:timeDate>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="CreditorsRun" name="Include in creditors run">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="creditors-run" />
+        <zeebe:assignmentDefinition candidateGroups="creditors" />
+        <zeebe:ioMapping>
+          <zeebe:output source="={paymentReference: paymentReference, processedBy: processedBy, amount: payment.amount}" target="paymentRecord" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WaitForDueDate_CreditorsRun</bpmn:incoming>
+      <bpmn:outgoing>Flow_CreditorsRun_End_paid</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="End_paid" name="Paid">
+      <bpmn:incoming>Flow_CreditorsRun_End_paid</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:callActivity id="QueryInvalid" name="Supplier Query">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="supplier-query" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;Invoice failed validation: &#34; + string join(validation.errors, &#34;; &#34;)" target="queryReason" />
+          <zeebe:output source="=queryOutcome" target="queryOutcome" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_valid_QueryInvalid</bpmn:incoming>
+      <bpmn:outgoing>Flow_QueryInvalid_End_invalid</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="End_invalid" name="Closed: invalid invoice">
+      <bpmn:incoming>Flow_QueryInvalid_End_invalid</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_duplicate" name="Rejected: duplicate">
+      <bpmn:documentation>Same supplier VAT number and invoice number already exists in invoice history.</bpmn:documentation>
+      <bpmn:incoming>Flow_Gw_duplicate_End_duplicate</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:callActivity id="QueryRejected" name="Supplier Query">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="supplier-query" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;Approval rejected by &#34; + invoiceApproval.approver + (if invoiceApproval.comment = null then &#34;&#34; else &#34;: &#34; + invoiceApproval.comment) + &#34;. Flags: &#34; + approvalRequest.flagReason" target="queryReason" />
+          <zeebe:output source="=queryOutcome" target="queryOutcome" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_approved_QueryRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_QueryRejected_End_rejected</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="End_rejected" name="Closed via supplier query">
+      <bpmn:incoming>Flow_QueryRejected_End_rejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_invoice_ValidateInvoice" sourceRef="Start_invoice" targetRef="ValidateInvoice" />
+    <bpmn:sequenceFlow id="Flow_ValidateInvoice_Gw_valid" sourceRef="ValidateInvoice" targetRef="Gw_valid" />
+    <bpmn:sequenceFlow id="Flow_Gw_valid_FetchHistory" name="valid" sourceRef="Gw_valid" targetRef="FetchHistory">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=validation.valid = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_valid_QueryInvalid" name="invalid" sourceRef="Gw_valid" targetRef="QueryInvalid" />
+    <bpmn:sequenceFlow id="Flow_QueryInvalid_End_invalid" sourceRef="QueryInvalid" targetRef="End_invalid" />
+    <bpmn:sequenceFlow id="Flow_FetchHistory_DuplicateCheck" sourceRef="FetchHistory" targetRef="DuplicateCheck" />
+    <bpmn:sequenceFlow id="Flow_DuplicateCheck_Gw_duplicate" sourceRef="DuplicateCheck" targetRef="Gw_duplicate" />
+    <bpmn:sequenceFlow id="Flow_Gw_duplicate_End_duplicate" name="duplicate" sourceRef="Gw_duplicate" targetRef="End_duplicate">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=duplicateCheck.isDuplicate = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_duplicate_ThreeWayMatch" name="new" sourceRef="Gw_duplicate" targetRef="ThreeWayMatch" />
+    <bpmn:sequenceFlow id="Flow_ThreeWayMatch_AiReview" sourceRef="ThreeWayMatch" targetRef="AiReview" />
+    <bpmn:sequenceFlow id="Flow_AiReview_PrepareApproval" sourceRef="AiReview" targetRef="PrepareApproval" />
+    <bpmn:sequenceFlow id="Flow_PrepareApproval_ApproveInvoice" sourceRef="PrepareApproval" targetRef="ApproveInvoice" />
+    <bpmn:sequenceFlow id="Flow_ApproveInvoice_Gw_approved" sourceRef="ApproveInvoice" targetRef="Gw_approved" />
+    <bpmn:sequenceFlow id="Flow_Gw_approved_SchedulePayment" name="approved" sourceRef="Gw_approved" targetRef="SchedulePayment">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=invoiceApproval.approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_approved_QueryRejected" name="rejected" sourceRef="Gw_approved" targetRef="QueryRejected" />
+    <bpmn:sequenceFlow id="Flow_QueryRejected_End_rejected" sourceRef="QueryRejected" targetRef="End_rejected" />
+    <bpmn:sequenceFlow id="Flow_SchedulePayment_WaitForDueDate" sourceRef="SchedulePayment" targetRef="WaitForDueDate" />
+    <bpmn:sequenceFlow id="Flow_WaitForDueDate_CreditorsRun" sourceRef="WaitForDueDate" targetRef="CreditorsRun" />
+    <bpmn:sequenceFlow id="Flow_CreditorsRun_End_paid" sourceRef="CreditorsRun" targetRef="End_paid" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_invoice-to-pay">
+    <bpmndi:BPMNPlane id="BPMNPlane_invoice-to-pay" bpmnElement="invoice-to-pay">
+      <bpmndi:BPMNShape id="Start_invoice_di" bpmnElement="Start_invoice">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ValidateInvoice_di" bpmnElement="ValidateInvoice">
+        <dc:Bounds x="320" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_valid_di" bpmnElement="Gw_valid" isMarkerVisible="true">
+        <dc:Bounds x="515" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchHistory_di" bpmnElement="FetchHistory">
+        <dc:Bounds x="660" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DuplicateCheck_di" bpmnElement="DuplicateCheck">
+        <dc:Bounds x="830" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_duplicate_di" bpmnElement="Gw_duplicate" isMarkerVisible="true">
+        <dc:Bounds x="1025" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ThreeWayMatch_di" bpmnElement="ThreeWayMatch">
+        <dc:Bounds x="1170" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AiReview_di" bpmnElement="AiReview">
+        <dc:Bounds x="1340" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="PrepareApproval_di" bpmnElement="PrepareApproval">
+        <dc:Bounds x="1510" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApproveInvoice_di" bpmnElement="ApproveInvoice">
+        <dc:Bounds x="1680" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_approved_di" bpmnElement="Gw_approved" isMarkerVisible="true">
+        <dc:Bounds x="1875" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SchedulePayment_di" bpmnElement="SchedulePayment">
+        <dc:Bounds x="2020" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WaitForDueDate_di" bpmnElement="WaitForDueDate">
+        <dc:Bounds x="2222" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CreditorsRun_di" bpmnElement="CreditorsRun">
+        <dc:Bounds x="2360" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_paid_di" bpmnElement="End_paid">
+        <dc:Bounds x="2562" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="QueryInvalid_di" bpmnElement="QueryInvalid">
+        <dc:Bounds x="660" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_invalid_di" bpmnElement="End_invalid">
+        <dc:Bounds x="862" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_duplicate_di" bpmnElement="End_duplicate">
+        <dc:Bounds x="1202" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="QueryRejected_di" bpmnElement="QueryRejected">
+        <dc:Bounds x="2020" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_rejected_di" bpmnElement="End_rejected">
+        <dc:Bounds x="2222" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_invoice_ValidateInvoice_di" bpmnElement="Flow_Start_invoice_ValidateInvoice">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="320" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ValidateInvoice_Gw_valid_di" bpmnElement="Flow_ValidateInvoice_Gw_valid">
+        <di:waypoint x="420" y="150" />
+        <di:waypoint x="515" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_valid_FetchHistory_di" bpmnElement="Flow_Gw_valid_FetchHistory">
+        <di:waypoint x="565" y="150" />
+        <di:waypoint x="660" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_valid_QueryInvalid_di" bpmnElement="Flow_Gw_valid_QueryInvalid">
+        <di:waypoint x="540" y="175" />
+        <di:waypoint x="540" y="290" />
+        <di:waypoint x="660" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_QueryInvalid_End_invalid_di" bpmnElement="Flow_QueryInvalid_End_invalid">
+        <di:waypoint x="760" y="290" />
+        <di:waypoint x="862" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchHistory_DuplicateCheck_di" bpmnElement="Flow_FetchHistory_DuplicateCheck">
+        <di:waypoint x="760" y="150" />
+        <di:waypoint x="830" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DuplicateCheck_Gw_duplicate_di" bpmnElement="Flow_DuplicateCheck_Gw_duplicate">
+        <di:waypoint x="930" y="150" />
+        <di:waypoint x="1025" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_duplicate_End_duplicate_di" bpmnElement="Flow_Gw_duplicate_End_duplicate">
+        <di:waypoint x="1050" y="175" />
+        <di:waypoint x="1050" y="290" />
+        <di:waypoint x="1202" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_duplicate_ThreeWayMatch_di" bpmnElement="Flow_Gw_duplicate_ThreeWayMatch">
+        <di:waypoint x="1075" y="150" />
+        <di:waypoint x="1170" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ThreeWayMatch_AiReview_di" bpmnElement="Flow_ThreeWayMatch_AiReview">
+        <di:waypoint x="1270" y="150" />
+        <di:waypoint x="1340" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AiReview_PrepareApproval_di" bpmnElement="Flow_AiReview_PrepareApproval">
+        <di:waypoint x="1440" y="150" />
+        <di:waypoint x="1510" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PrepareApproval_ApproveInvoice_di" bpmnElement="Flow_PrepareApproval_ApproveInvoice">
+        <di:waypoint x="1610" y="150" />
+        <di:waypoint x="1680" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApproveInvoice_Gw_approved_di" bpmnElement="Flow_ApproveInvoice_Gw_approved">
+        <di:waypoint x="1780" y="150" />
+        <di:waypoint x="1875" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_SchedulePayment_di" bpmnElement="Flow_Gw_approved_SchedulePayment">
+        <di:waypoint x="1925" y="150" />
+        <di:waypoint x="2020" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_QueryRejected_di" bpmnElement="Flow_Gw_approved_QueryRejected">
+        <di:waypoint x="1900" y="175" />
+        <di:waypoint x="1900" y="290" />
+        <di:waypoint x="2020" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_QueryRejected_End_rejected_di" bpmnElement="Flow_QueryRejected_End_rejected">
+        <di:waypoint x="2120" y="290" />
+        <di:waypoint x="2222" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SchedulePayment_WaitForDueDate_di" bpmnElement="Flow_SchedulePayment_WaitForDueDate">
+        <di:waypoint x="2120" y="150" />
+        <di:waypoint x="2222" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WaitForDueDate_CreditorsRun_di" bpmnElement="Flow_WaitForDueDate_CreditorsRun">
+        <di:waypoint x="2258" y="150" />
+        <di:waypoint x="2360" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CreditorsRun_End_paid_di" bpmnElement="Flow_CreditorsRun_End_paid">
+        <di:waypoint x="2460" y="150" />
+        <di:waypoint x="2562" y="150" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

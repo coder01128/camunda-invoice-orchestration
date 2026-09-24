@@ -1,0 +1,60 @@
+{
+  "id": "supplier-query",
+  "type": "default",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Claude Code",
+    "version": "1.0"
+  },
+  "schemaVersion": 16,
+  "components": [
+    {
+      "id": "Text_q",
+      "type": "text",
+      "text": "### Query supplier\n\n**Supplier:** {{invoice.supplier_name}} (VAT {{invoice.supplier_vat}})\n\n**Invoice:** {{invoice.invoice_number}} dated {{invoice.invoice_date}}, total R {{invoice.total_due}}\n\n**Reason for query:** {{queryReason}}"
+    },
+    {
+      "id": "Field_outcome",
+      "type": "select",
+      "key": "outcome",
+      "label": "Outcome",
+      "values": [
+        {
+          "label": "Credit note received",
+          "value": "Credit note received"
+        },
+        {
+          "label": "Corrected invoice requested",
+          "value": "Corrected invoice requested"
+        },
+        {
+          "label": "Invoice cancelled by supplier",
+          "value": "Invoice cancelled by supplier"
+        },
+        {
+          "label": "Query withdrawn",
+          "value": "Query withdrawn"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_notes",
+      "type": "textarea",
+      "key": "notes",
+      "label": "Notes"
+    },
+    {
+      "id": "Field_by",
+      "type": "textfield",
+      "key": "handledBy",
+      "label": "Handled by",
+      "validate": {
+        "required": true
+      }
+    }
+  ]
+}

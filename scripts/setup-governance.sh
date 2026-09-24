@@ -33,7 +33,7 @@ run() {  # run a c8ctl command, print a one-line result, tolerate "already exist
 }
 FAILED=0
 
-for g in manager director; do
+for g in manager director creditors; do
   name="$(tr '[:lower:]' '[:upper:]' <<< "${g:0:1}")${g:1}"
   echo "Group: $g"
   run "create group $g"                  create group --groupId="$g" --name="$name approvers"

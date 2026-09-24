@@ -1,0 +1,29 @@
+{
+  "_scenario": "Near-duplicate: new number, same supplier/items/amount, one day after paid HSD-2026-0871 (rules pass it; AI should flag)",
+  "supplier_name": "Highveld Soft Drinks (fictional)",
+  "supplier_vat": "4000000011",
+  "invoice_number": "HSD-2026-0872",
+  "invoice_date": "03 September 2026",
+  "due_date": "03 October 2026",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "House Cola",
+      "volume": "330ml",
+      "quantity": 48,
+      "unit_price": 12.5,
+      "line_total": 600
+    },
+    {
+      "line_number": 2,
+      "product": "Tonic Water",
+      "volume": "200ml",
+      "quantity": 48,
+      "unit_price": 9.8,
+      "line_total": 470.4
+    }
+  ],
+  "subtotal": 1070.4,
+  "vat_amount": 160.56,
+  "total_due": 1230.96
+}

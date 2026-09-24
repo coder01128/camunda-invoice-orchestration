@@ -318,8 +318,9 @@
       "supplier_vat": "4000000011",
       "invoice_number": "HSD-2026-0871",
       "invoice_date": "02 September 2026",
-      "total_due": 4312.2,
-      "status": "PAID"
+      "total_due": 1230.96,
+      "status": "PAID",
+      "items_summary": "48 x House Cola 330ml, 48 x Tonic Water 200ml"
     },
     {
       "supplier_vat": "4000000033",

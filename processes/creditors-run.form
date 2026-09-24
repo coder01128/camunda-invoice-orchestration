@@ -1,0 +1,36 @@
+{
+  "id": "creditors-run",
+  "type": "default",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Claude Code",
+    "version": "1.0"
+  },
+  "schemaVersion": 16,
+  "components": [
+    {
+      "id": "Text_pay",
+      "type": "text",
+      "text": "### Include in creditors run\n\n**Supplier:** {{payment.supplier}}\n\n**Invoice:** {{payment.invoiceNumber}}\n\n**Amount:** R {{payment.amount}}\n\n**Due:** {{payment.payOn}} ({{payment.note}})\n\n**Approved by:** {{invoiceApproval.approver}} ({{invoiceApproval.tier}})\n\n_Prototype: no payment is made. This task records the payment reference only._"
+    },
+    {
+      "id": "Field_ref",
+      "type": "textfield",
+      "key": "paymentReference",
+      "label": "Payment / EFT batch reference",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_by",
+      "type": "textfield",
+      "key": "processedBy",
+      "label": "Processed by",
+      "validate": {
+        "required": true
+      }
+    }
+  ]
+}
