@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_pour-cost-reconciliation" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Claude Code" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="pour-cost-reconciliation" name="Pour-Cost Reconciliation" isExecutable="true">
+    <bpmn:documentation>Start with {outlet} (optional varianceTolerancePct override; default = cluster variable pourCostTolerance). Compares theoretical usage (POS sales x recipes) with actual usage from the physical count. Over tolerance -&gt; Approval Routing (flagged, so always a human). POS data is a FICTIONAL mock export: no Oracle Simphony integration exists or is claimed.</bpmn:documentation>
+    <bpmn:startEvent id="Start_pourcost" name="Reconciliation due">
+      <bpmn:outgoing>Flow_Start_pourcost_FetchPosSales</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="FetchPosSales" name="Fetch POS sales (mock export)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/pos-sales-export.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={posSales: response.body}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_pourcost_FetchPosSales</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchPosSales_FetchStockCount</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="FetchStockCount" name="Fetch physical stock count (mock)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/stock-count.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={stockCount: response.body}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchPosSales_FetchStockCount</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchStockCount_FetchRecipes</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="FetchRecipes" name="Fetch recipes &#38; costs (mock ERP)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/erp.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={erpRecipes: response.body.recipes, erpProducts: response.body.products}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchStockCount_FetchRecipes</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchRecipes_CalculateVariance</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="CalculateVariance" name="Calculate pour-cost variance">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  tolerancePct: if varianceTolerancePct != null then varianceTolerancePct&#10;                else camunda.vars.env.pourCostTolerance.maxVariancePct,&#10;  toleranceSource: if varianceTolerancePct != null then &#34;supplied by caller&#34;&#10;                   else if camunda.vars.env.pourCostTolerance = null then &#34;NONE CONFIGURED - every positive variance is escalated&#34;&#10;                   else camunda.vars.env.pourCostTolerance.source,&#10;  usage: for c in stockCount.items return {&#10;    countSku: c.sku,&#10;    prod: (erpProducts[item.sku = countSku])[1],&#10;    product: prod.product,&#10;    theoreticalMl: sum(concatenate([0], for s in posSales.sales return&#10;                     s.qty * sum(concatenate([0], for comp in (erpRecipes[item.menu_item = s.menu_item])[1].components[item.sku = countSku] return comp.ml)))),&#10;    actualMl: c.opening_ml + c.received_ml - c.closing_ml,&#10;    varianceMl: actualMl - theoreticalMl,&#10;    variancePct: if theoreticalMl = 0 then null else decimal(varianceMl / theoreticalMl * 100, 1),&#10;    varianceValue: decimal(varianceMl / prod.ml * prod.unit_cost, 2),&#10;    closingUnits: decimal(c.closing_ml / prod.ml, 2),&#10;    overTolerance: varianceMl &#62; 0 and (tolerancePct = null or variancePct = null or variancePct &#62; tolerancePct)&#10;  },&#10;  overItems: usage[item.overTolerance = true],&#10;  totalVarianceValue: decimal(sum(concatenate([0], for u in overItems return u.varianceValue)), 2),&#10;  summary: if count(overItems) = 0 then &#34;All items within tolerance&#34;&#10;           else string join(for u in overItems return u.product + &#34; +&#34; + string(u.variancePct) + &#34;% (R&#34; + string(u.varianceValue) + &#34;)&#34;, &#34;; &#34;)&#10;}" resultVariable="pourCost" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchRecipes_CalculateVariance</bpmn:incoming>
+      <bpmn:outgoing>Flow_CalculateVariance_Gw_tolerance</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gw_tolerance" name="Over tolerance?" default="Flow_Gw_tolerance_WithinTolerance">
+      <bpmn:incoming>Flow_CalculateVariance_Gw_tolerance</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_tolerance_ApproveVariance</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_tolerance_WithinTolerance</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="ApproveVariance" name="Approval Routing">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="approval-routing" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=pourCost.totalVarianceValue" target="amount" />
+          <zeebe:input source="=&#34;pour-cost&#34;" target="category" />
+          <zeebe:input source="=&#34;Pour-cost variance over tolerance at &#34; + outlet + &#34;: &#34; + pourCost.summary" target="flagReason" />
+          <zeebe:input source="=true" target="flagged" />
+          <zeebe:input source="=&#34;POURCOST-&#34; + outlet + &#34;-&#34; + stockCount.period_to" target="sourceRef" />
+          <zeebe:input source="=&#34;Pour-cost: &#34; + outlet" target="supplier" />
+          <zeebe:output source="=approvalOutcome" target="varianceApproval" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_tolerance_ApproveVariance</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApproveVariance_Gw_accepted</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="Gw_accepted" name="Variance accepted?" default="Flow_Gw_accepted_InvestigateVariance">
+      <bpmn:incoming>Flow_ApproveVariance_Gw_accepted</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_accepted_Gw_join</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_accepted_InvestigateVariance</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="InvestigateVariance" name="Investigate variance">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="pour-cost-investigation" />
+        <zeebe:assignmentDefinition candidateGroups="manager" />
+        <zeebe:ioMapping>
+          <zeebe:output source="={findings: findings, action: action, investigator: investigator}" target="investigation" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_accepted_InvestigateVariance</bpmn:incoming>
+      <bpmn:outgoing>Flow_InvestigateVariance_Gw_join</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_join">
+      <bpmn:incoming>Flow_Gw_accepted_Gw_join</bpmn:incoming>
+      <bpmn:incoming>Flow_InvestigateVariance_Gw_join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_join_StockLevels</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:intermediateThrowEvent id="StockLevels" name="Stock levels updated">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=for u in pourCost.usage return {sku: u.countSku, level: u.closingUnits}" target="stockMovements" />
+          <zeebe:input source="=outlet" target="outlet" />
+          <zeebe:input source="=&#34;pour-cost-count&#34;" target="source" />
+          <zeebe:input source="=&#34;POURCOST-&#34; + outlet + &#34;-&#34; + stockCount.period_to" target="sourceRef" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_join_StockLevels</bpmn:incoming>
+      <bpmn:outgoing>Flow_StockLevels_End_reconciled</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="StockLevels_def" signalRef="Signal_stock-level-changed" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_reconciled" name="Reconciled">
+      <bpmn:incoming>Flow_StockLevels_End_reconciled</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="WithinTolerance" name="Record within tolerance">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={approved: true, approver: &#34;system:within-tolerance&#34;, tier: &#34;none&#34;, escalated: false, comment: pourCost.summary}" resultVariable="varianceApproval" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_tolerance_WithinTolerance</bpmn:incoming>
+      <bpmn:outgoing>Flow_WithinTolerance_StockLevels_ok</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:intermediateThrowEvent id="StockLevels_ok" name="Stock levels updated">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=for u in pourCost.usage return {sku: u.countSku, level: u.closingUnits}" target="stockMovements" />
+          <zeebe:input source="=outlet" target="outlet" />
+          <zeebe:input source="=&#34;pour-cost-count&#34;" target="source" />
+          <zeebe:input source="=&#34;POURCOST-&#34; + outlet + &#34;-&#34; + stockCount.period_to" target="sourceRef" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WithinTolerance_StockLevels_ok</bpmn:incoming>
+      <bpmn:outgoing>Flow_StockLevels_ok_End_within</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="StockLevels_ok_def" signalRef="Signal_stock-level-changed" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_within" name="Within tolerance">
+      <bpmn:incoming>Flow_StockLevels_ok_End_within</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_pourcost_FetchPosSales" sourceRef="Start_pourcost" targetRef="FetchPosSales" />
+    <bpmn:sequenceFlow id="Flow_FetchPosSales_FetchStockCount" sourceRef="FetchPosSales" targetRef="FetchStockCount" />
+    <bpmn:sequenceFlow id="Flow_FetchStockCount_FetchRecipes" sourceRef="FetchStockCount" targetRef="FetchRecipes" />
+    <bpmn:sequenceFlow id="Flow_FetchRecipes_CalculateVariance" sourceRef="FetchRecipes" targetRef="CalculateVariance" />
+    <bpmn:sequenceFlow id="Flow_CalculateVariance_Gw_tolerance" sourceRef="CalculateVariance" targetRef="Gw_tolerance" />
+    <bpmn:sequenceFlow id="Flow_Gw_tolerance_ApproveVariance" name="yes" sourceRef="Gw_tolerance" targetRef="ApproveVariance">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=count(pourCost.overItems) &gt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_tolerance_WithinTolerance" name="no" sourceRef="Gw_tolerance" targetRef="WithinTolerance" />
+    <bpmn:sequenceFlow id="Flow_ApproveVariance_Gw_accepted" sourceRef="ApproveVariance" targetRef="Gw_accepted" />
+    <bpmn:sequenceFlow id="Flow_Gw_accepted_Gw_join" name="accepted" sourceRef="Gw_accepted" targetRef="Gw_join">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=varianceApproval.approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_accepted_InvestigateVariance" name="not accepted" sourceRef="Gw_accepted" targetRef="InvestigateVariance" />
+    <bpmn:sequenceFlow id="Flow_InvestigateVariance_Gw_join" sourceRef="InvestigateVariance" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="Flow_Gw_join_StockLevels" sourceRef="Gw_join" targetRef="StockLevels" />
+    <bpmn:sequenceFlow id="Flow_StockLevels_End_reconciled" sourceRef="StockLevels" targetRef="End_reconciled" />
+    <bpmn:sequenceFlow id="Flow_WithinTolerance_StockLevels_ok" sourceRef="WithinTolerance" targetRef="StockLevels_ok" />
+    <bpmn:sequenceFlow id="Flow_StockLevels_ok_End_within" sourceRef="StockLevels_ok" targetRef="End_within" />
+  </bpmn:process>
+  <bpmn:signal id="Signal_stock-level-changed" name="stock-level-changed" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_pour-cost-reconciliation">
+    <bpmndi:BPMNPlane id="BPMNPlane_pour-cost-reconciliation" bpmnElement="pour-cost-reconciliation">
+      <bpmndi:BPMNShape id="Start_pourcost_di" bpmnElement="Start_pourcost">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchPosSales_di" bpmnElement="FetchPosSales">
+        <dc:Bounds x="320" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchStockCount_di" bpmnElement="FetchStockCount">
+        <dc:Bounds x="490" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchRecipes_di" bpmnElement="FetchRecipes">
+        <dc:Bounds x="660" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CalculateVariance_di" bpmnElement="CalculateVariance">
+        <dc:Bounds x="830" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_tolerance_di" bpmnElement="Gw_tolerance" isMarkerVisible="true">
+        <dc:Bounds x="1025" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApproveVariance_di" bpmnElement="ApproveVariance">
+        <dc:Bounds x="1170" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_accepted_di" bpmnElement="Gw_accepted" isMarkerVisible="true">
+        <dc:Bounds x="1365" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="InvestigateVariance_di" bpmnElement="InvestigateVariance">
+        <dc:Bounds x="1510" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_join_di" bpmnElement="Gw_join" isMarkerVisible="true">
+        <dc:Bounds x="1705" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StockLevels_di" bpmnElement="StockLevels">
+        <dc:Bounds x="1882" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_reconciled_di" bpmnElement="End_reconciled">
+        <dc:Bounds x="2052" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WithinTolerance_di" bpmnElement="WithinTolerance">
+        <dc:Bounds x="1170" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StockLevels_ok_di" bpmnElement="StockLevels_ok">
+        <dc:Bounds x="1372" y="412" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_within_di" bpmnElement="End_within">
+        <dc:Bounds x="1542" y="412" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_pourcost_FetchPosSales_di" bpmnElement="Flow_Start_pourcost_FetchPosSales">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="320" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchPosSales_FetchStockCount_di" bpmnElement="Flow_FetchPosSales_FetchStockCount">
+        <di:waypoint x="420" y="150" />
+        <di:waypoint x="490" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchStockCount_FetchRecipes_di" bpmnElement="Flow_FetchStockCount_FetchRecipes">
+        <di:waypoint x="590" y="150" />
+        <di:waypoint x="660" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchRecipes_CalculateVariance_di" bpmnElement="Flow_FetchRecipes_CalculateVariance">
+        <di:waypoint x="760" y="150" />
+        <di:waypoint x="830" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CalculateVariance_Gw_tolerance_di" bpmnElement="Flow_CalculateVariance_Gw_tolerance">
+        <di:waypoint x="930" y="150" />
+        <di:waypoint x="1025" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_tolerance_ApproveVariance_di" bpmnElement="Flow_Gw_tolerance_ApproveVariance">
+        <di:waypoint x="1075" y="150" />
+        <di:waypoint x="1170" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_tolerance_WithinTolerance_di" bpmnElement="Flow_Gw_tolerance_WithinTolerance">
+        <di:waypoint x="1050" y="175" />
+        <di:waypoint x="1050" y="430" />
+        <di:waypoint x="1170" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApproveVariance_Gw_accepted_di" bpmnElement="Flow_ApproveVariance_Gw_accepted">
+        <di:waypoint x="1270" y="150" />
+        <di:waypoint x="1365" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_accepted_Gw_join_di" bpmnElement="Flow_Gw_accepted_Gw_join">
+        <di:waypoint x="1415" y="150" />
+        <di:waypoint x="1705" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_accepted_InvestigateVariance_di" bpmnElement="Flow_Gw_accepted_InvestigateVariance">
+        <di:waypoint x="1390" y="175" />
+        <di:waypoint x="1390" y="290" />
+        <di:waypoint x="1510" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_InvestigateVariance_Gw_join_di" bpmnElement="Flow_InvestigateVariance_Gw_join">
+        <di:waypoint x="1610" y="290" />
+        <di:waypoint x="1730" y="290" />
+        <di:waypoint x="1730" y="175" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_join_StockLevels_di" bpmnElement="Flow_Gw_join_StockLevels">
+        <di:waypoint x="1755" y="150" />
+        <di:waypoint x="1882" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StockLevels_End_reconciled_di" bpmnElement="Flow_StockLevels_End_reconciled">
+        <di:waypoint x="1918" y="150" />
+        <di:waypoint x="2052" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WithinTolerance_StockLevels_ok_di" bpmnElement="Flow_WithinTolerance_StockLevels_ok">
+        <di:waypoint x="1270" y="430" />
+        <di:waypoint x="1372" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StockLevels_ok_End_within_di" bpmnElement="Flow_StockLevels_ok_End_within">
+        <di:waypoint x="1408" y="430" />
+        <di:waypoint x="1542" y="430" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

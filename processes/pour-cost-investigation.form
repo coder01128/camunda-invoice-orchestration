@@ -1,0 +1,63 @@
+{
+  "id": "pour-cost-investigation",
+  "type": "default",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Claude Code",
+    "version": "1.0"
+  },
+  "schemaVersion": 16,
+  "components": [
+    {
+      "id": "Text_summary",
+      "type": "text",
+      "text": "### Pour-cost variance not accepted: investigate\n\n**Outlet:** {{outlet}}\n\n**Over tolerance:** {{pourCost.summary}}\n\n**Variance value:** R {{pourCost.totalVarianceValue}}\n\n**Reviewer comment:** {{varianceApproval.comment}}\n\n_Tolerance: {{pourCost.toleranceSource}}. Sales figures come from a fictional POS export; no Oracle integration._"
+    },
+    {
+      "id": "Field_findings",
+      "type": "textarea",
+      "key": "findings",
+      "label": "Findings",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_action",
+      "type": "select",
+      "key": "action",
+      "label": "Action taken",
+      "values": [
+        {
+          "label": "Staff retraining on pour spec",
+          "value": "Staff retraining on pour spec"
+        },
+        {
+          "label": "Stock recount requested",
+          "value": "Stock recount requested"
+        },
+        {
+          "label": "Escalated to operations",
+          "value": "Escalated to operations"
+        },
+        {
+          "label": "No further action",
+          "value": "No further action"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_investigator",
+      "type": "textfield",
+      "key": "investigator",
+      "label": "Your name",
+      "validate": {
+        "required": true
+      }
+    }
+  ]
+}
