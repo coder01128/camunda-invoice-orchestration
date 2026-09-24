@@ -29,6 +29,7 @@ module.exports = {
   deploy: files => c8(["deploy", ...files], { json: false }),
   start: (id, vars, businessId) => keyOf(c8(["create", "pi", `--id=${id}`, `--variables=${JSON.stringify(vars)}`,
     ...(businessId ? [`--businessId=${businessId}`] : [])])),
+  search: (resource, ...filters) => { const r = c8(["search", resource, ...filters], { allowFail: true }); return Array.isArray(r) ? r : []; },
   instance: key => c8(["get", "pi", key], { allowFail: true }) || {},  // {} while the search index catches up
   tasks: (pik, state = "CREATED") => {
     const r = c8(["search", "ut", `--processInstanceKey=${pik}`, `--state=${state}`], { allowFail: true });

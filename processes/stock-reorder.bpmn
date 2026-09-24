@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_stock-reorder" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Claude Code" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="stock-reorder" name="Stock Reorder" isExecutable="true">
+    <bpmn:documentation>Loop-closer. Started by signal stock-level-changed {stockMovements[{sku, qtyChange|level}], outlet, source, sourceRef} from Goods Receipt 3-Way Match, Waste Write-off or Pour-Cost Reconciliation. Stock levels are computed from fictional mock on-hand figures; a real build reads live inventory.</bpmn:documentation>
+    <bpmn:startEvent id="Start_signal" name="Stock level changed">
+      <bpmn:outgoing>Flow_Start_signal_FetchStock</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="Start_signal_def" signalRef="Signal_stock-level-changed" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="FetchStock" name="Fetch stock parameters (mock ERP)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/erp.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={erpStockParams: response.body.stockParams, erpProducts: response.body.products}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_signal_FetchStock</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchStock_CheckReorder</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="CheckReorder" name="Check reorder points">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={&#10;  checks: for m in stockMovements return {&#10;    sku: m.sku,&#10;    param: (erpStockParams[item.sku = m.sku and item.outlet = outlet])[1],&#10;    level: if m.level != null then m.level else if param = null then null else param.on_hand + m.qtyChange&#10;  },&#10;  lines: for c in checks[item.param != null and item.level != null and item.level &#60; item.param.reorder_point] return {&#10;    sku: c.sku,&#10;    product: (erpProducts[item.sku = c.sku].product)[1],&#10;    supplierId: (erpProducts[item.sku = c.sku].supplier_id)[1],&#10;    level: c.level,&#10;    reorderPoint: c.param.reorder_point,&#10;    orderQty: c.param.reorder_qty,&#10;    unitCost: (erpProducts[item.sku = c.sku].unit_cost)[1],&#10;    lineValue: decimal(c.param.reorder_qty * (erpProducts[item.sku = c.sku].unit_cost)[1], 2)&#10;  },&#10;  total: if count(lines) = 0 then 0 else decimal(sum(for l in lines return l.lineValue), 2)&#10;}" resultVariable="reorderCheck" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchStock_CheckReorder</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckReorder_Gw_reorder</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gw_reorder" name="Below reorder point?" default="Flow_Gw_reorder_End_ok">
+      <bpmn:incoming>Flow_CheckReorder_Gw_reorder</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_reorder_DraftRequisition</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_reorder_End_ok</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="DraftRequisition" name="Draft purchase requisition">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={outlet: outlet, source: source, sourceRef: sourceRef, lines: reorderCheck.lines, total: reorderCheck.total,&#10;  summary: string join(for l in reorderCheck.lines return l.product + &#34; at &#34; + string(l.level) + &#34; (reorder point &#34; + string(l.reorderPoint) + &#34;, order &#34; + string(l.orderQty) + &#34;)&#34;, &#34;; &#34;)}" resultVariable="requisition" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_reorder_DraftRequisition</bpmn:incoming>
+      <bpmn:outgoing>Flow_DraftRequisition_ApproveRequisition</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:callActivity id="ApproveRequisition" name="Approval Routing">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="approval-routing" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=requisition.total" target="amount" />
+          <zeebe:input source="=&#34;stock-requisition&#34;" target="category" />
+          <zeebe:input source="=&#34;Reorder after &#34; + source + &#34;: &#34; + requisition.summary" target="flagReason" />
+          <zeebe:input source="=false" target="flagged" />
+          <zeebe:input source="=&#34;REQ-&#34; + outlet + &#34;-&#34; + string(today())" target="sourceRef" />
+          <zeebe:input source="=&#34;Requisition (&#34; + string(count(requisition.lines)) + &#34; lines)&#34;" target="supplier" />
+          <zeebe:output source="=approvalOutcome" target="requisitionApproval" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_DraftRequisition_ApproveRequisition</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApproveRequisition_Gw_approved</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="Gw_approved" name="Approved?" default="Flow_Gw_approved_End_rejected">
+      <bpmn:incoming>Flow_ApproveRequisition_Gw_approved</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_approved_RaisePo</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_approved_End_rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="RaisePo" name="Raise purchase order (mock)">
+      <bpmn:documentation>Mock only: no supplier or purchasing system is called. The supplier's invoice for this order would enter Invoice-to-Pay on arrival.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:script expression="={poNumber: &#34;PO-MOCK-&#34; + outlet + &#34;-&#34; + string(today()), status: &#34;ISSUED (mock - no purchasing system connected)&#34;, outlet: outlet, lines: requisition.lines, total: requisition.total}" resultVariable="purchaseOrder" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_approved_RaisePo</bpmn:incoming>
+      <bpmn:outgoing>Flow_RaisePo_End_po</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="End_po" name="PO issued">
+      <bpmn:incoming>Flow_RaisePo_End_po</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_ok" name="Stock OK">
+      <bpmn:incoming>Flow_Gw_reorder_End_ok</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_rejected" name="Requisition rejected">
+      <bpmn:incoming>Flow_Gw_approved_End_rejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_signal_FetchStock" sourceRef="Start_signal" targetRef="FetchStock" />
+    <bpmn:sequenceFlow id="Flow_FetchStock_CheckReorder" sourceRef="FetchStock" targetRef="CheckReorder" />
+    <bpmn:sequenceFlow id="Flow_CheckReorder_Gw_reorder" sourceRef="CheckReorder" targetRef="Gw_reorder" />
+    <bpmn:sequenceFlow id="Flow_Gw_reorder_DraftRequisition" name="yes" sourceRef="Gw_reorder" targetRef="DraftRequisition">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=count(reorderCheck.lines) &gt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_reorder_End_ok" name="no" sourceRef="Gw_reorder" targetRef="End_ok" />
+    <bpmn:sequenceFlow id="Flow_DraftRequisition_ApproveRequisition" sourceRef="DraftRequisition" targetRef="ApproveRequisition" />
+    <bpmn:sequenceFlow id="Flow_ApproveRequisition_Gw_approved" sourceRef="ApproveRequisition" targetRef="Gw_approved" />
+    <bpmn:sequenceFlow id="Flow_Gw_approved_RaisePo" name="approved" sourceRef="Gw_approved" targetRef="RaisePo">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=requisitionApproval.approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_approved_End_rejected" name="rejected" sourceRef="Gw_approved" targetRef="End_rejected" />
+    <bpmn:sequenceFlow id="Flow_RaisePo_End_po" sourceRef="RaisePo" targetRef="End_po" />
+  </bpmn:process>
+  <bpmn:signal id="Signal_stock-level-changed" name="stock-level-changed" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_stock-reorder">
+    <bpmndi:BPMNPlane id="BPMNPlane_stock-reorder" bpmnElement="stock-reorder">
+      <bpmndi:BPMNShape id="Start_signal_di" bpmnElement="Start_signal">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchStock_di" bpmnElement="FetchStock">
+        <dc:Bounds x="320" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CheckReorder_di" bpmnElement="CheckReorder">
+        <dc:Bounds x="490" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_reorder_di" bpmnElement="Gw_reorder" isMarkerVisible="true">
+        <dc:Bounds x="685" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DraftRequisition_di" bpmnElement="DraftRequisition">
+        <dc:Bounds x="830" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApproveRequisition_di" bpmnElement="ApproveRequisition">
+        <dc:Bounds x="1000" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_approved_di" bpmnElement="Gw_approved" isMarkerVisible="true">
+        <dc:Bounds x="1195" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RaisePo_di" bpmnElement="RaisePo">
+        <dc:Bounds x="1340" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_po_di" bpmnElement="End_po">
+        <dc:Bounds x="1542" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_ok_di" bpmnElement="End_ok">
+        <dc:Bounds x="862" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_rejected_di" bpmnElement="End_rejected">
+        <dc:Bounds x="1372" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_signal_FetchStock_di" bpmnElement="Flow_Start_signal_FetchStock">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="320" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchStock_CheckReorder_di" bpmnElement="Flow_FetchStock_CheckReorder">
+        <di:waypoint x="420" y="150" />
+        <di:waypoint x="490" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CheckReorder_Gw_reorder_di" bpmnElement="Flow_CheckReorder_Gw_reorder">
+        <di:waypoint x="590" y="150" />
+        <di:waypoint x="685" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_reorder_DraftRequisition_di" bpmnElement="Flow_Gw_reorder_DraftRequisition">
+        <di:waypoint x="735" y="150" />
+        <di:waypoint x="830" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_reorder_End_ok_di" bpmnElement="Flow_Gw_reorder_End_ok">
+        <di:waypoint x="710" y="175" />
+        <di:waypoint x="710" y="290" />
+        <di:waypoint x="862" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DraftRequisition_ApproveRequisition_di" bpmnElement="Flow_DraftRequisition_ApproveRequisition">
+        <di:waypoint x="930" y="150" />
+        <di:waypoint x="1000" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApproveRequisition_Gw_approved_di" bpmnElement="Flow_ApproveRequisition_Gw_approved">
+        <di:waypoint x="1100" y="150" />
+        <di:waypoint x="1195" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_RaisePo_di" bpmnElement="Flow_Gw_approved_RaisePo">
+        <di:waypoint x="1245" y="150" />
+        <di:waypoint x="1340" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_End_rejected_di" bpmnElement="Flow_Gw_approved_End_rejected">
+        <di:waypoint x="1220" y="175" />
+        <di:waypoint x="1220" y="290" />
+        <di:waypoint x="1372" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RaisePo_End_po_di" bpmnElement="Flow_RaisePo_End_po">
+        <di:waypoint x="1440" y="150" />
+        <di:waypoint x="1542" y="150" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
