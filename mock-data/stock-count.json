@@ -1,0 +1,32 @@
+{
+  "_notice": "FICTIONAL MOCK physical stock count (ml).",
+  "outlet": "OUTLET-A",
+  "period_from": "2026-09-18",
+  "period_to": "2026-09-24",
+  "items": [
+    {
+      "sku": "SP-GIN-750",
+      "opening_ml": 7500,
+      "received_ml": 0,
+      "closing_ml": 1950
+    },
+    {
+      "sku": "SP-VODKA-750",
+      "opening_ml": 6750,
+      "received_ml": 0,
+      "closing_ml": 4300
+    },
+    {
+      "sku": "SP-WHISKY-750",
+      "opening_ml": 4500,
+      "received_ml": 0,
+      "closing_ml": 1100
+    },
+    {
+      "sku": "BR-LAGER-340",
+      "opening_ml": 81600,
+      "received_ml": 0,
+      "closing_ml": 10200
+    }
+  ]
+}

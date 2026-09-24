@@ -1,0 +1,473 @@
+{
+  "_notice": "FICTIONAL MOCK DATA for a Camunda prototype. Stands in for a purchasing/inventory system. Not real suppliers, prices, or stock.",
+  "suppliers": [
+    {
+      "supplier_id": "SUP-001",
+      "supplier_name": "Highveld Soft Drinks (fictional)",
+      "supplier_vat": "4000000011"
+    },
+    {
+      "supplier_id": "SUP-002",
+      "supplier_name": "Karoo Craft Brewing (fictional)",
+      "supplier_vat": "4000000022"
+    },
+    {
+      "supplier_id": "SUP-003",
+      "supplier_name": "Jozi Spirits Distributors (fictional)",
+      "supplier_vat": "4000000033"
+    },
+    {
+      "supplier_id": "SUP-004",
+      "supplier_name": "Cape Cellars Wine Merchants (fictional)",
+      "supplier_vat": "4000000044"
+    }
+  ],
+  "products": [
+    {
+      "sku": "SD-COLA-330",
+      "product": "House Cola",
+      "volume": "330ml",
+      "ml": 330,
+      "supplier_id": "SUP-001",
+      "unit_cost": 12.5
+    },
+    {
+      "sku": "SD-TONIC-200",
+      "product": "Tonic Water",
+      "volume": "200ml",
+      "ml": 200,
+      "supplier_id": "SUP-001",
+      "unit_cost": 9.8
+    },
+    {
+      "sku": "SD-SODA-200",
+      "product": "Soda Water",
+      "volume": "200ml",
+      "ml": 200,
+      "supplier_id": "SUP-001",
+      "unit_cost": 8.4
+    },
+    {
+      "sku": "SD-OJ-1L",
+      "product": "Orange Juice",
+      "volume": "1L",
+      "ml": 1000,
+      "supplier_id": "SUP-001",
+      "unit_cost": 24
+    },
+    {
+      "sku": "BR-LAGER-340",
+      "product": "Karoo Lager",
+      "volume": "340ml",
+      "ml": 340,
+      "supplier_id": "SUP-002",
+      "unit_cost": 16.9
+    },
+    {
+      "sku": "BR-IPA-440",
+      "product": "Karoo IPA",
+      "volume": "440ml",
+      "ml": 440,
+      "supplier_id": "SUP-002",
+      "unit_cost": 24.5
+    },
+    {
+      "sku": "SP-GIN-750",
+      "product": "Jozi Dry Gin",
+      "volume": "750ml",
+      "ml": 750,
+      "supplier_id": "SUP-003",
+      "unit_cost": 189
+    },
+    {
+      "sku": "SP-VODKA-750",
+      "product": "Jozi Vodka",
+      "volume": "750ml",
+      "ml": 750,
+      "supplier_id": "SUP-003",
+      "unit_cost": 165
+    },
+    {
+      "sku": "SP-WHISKY-750",
+      "product": "Jozi Blended Whisky",
+      "volume": "750ml",
+      "ml": 750,
+      "supplier_id": "SUP-003",
+      "unit_cost": 245
+    },
+    {
+      "sku": "WN-SB-750",
+      "product": "Cape Sauvignon Blanc",
+      "volume": "750ml",
+      "ml": 750,
+      "supplier_id": "SUP-004",
+      "unit_cost": 78
+    },
+    {
+      "sku": "WN-CAB-750",
+      "product": "Cape Cabernet Sauvignon",
+      "volume": "750ml",
+      "ml": 750,
+      "supplier_id": "SUP-004",
+      "unit_cost": 92
+    }
+  ],
+  "purchaseOrders": [
+    {
+      "po_number": "PO-DEMO-1001",
+      "supplier_id": "SUP-001",
+      "outlet": "OUTLET-A",
+      "order_date": "2026-09-10",
+      "status": "OPEN",
+      "lines": [
+        {
+          "sku": "SD-COLA-330",
+          "product": "House Cola",
+          "volume": "330ml",
+          "quantity": 48,
+          "unit_price": 12.5
+        },
+        {
+          "sku": "SD-TONIC-200",
+          "product": "Tonic Water",
+          "volume": "200ml",
+          "quantity": 48,
+          "unit_price": 9.8
+        },
+        {
+          "sku": "SD-SODA-200",
+          "product": "Soda Water",
+          "volume": "200ml",
+          "quantity": 36,
+          "unit_price": 8.4
+        },
+        {
+          "sku": "SD-OJ-1L",
+          "product": "Orange Juice",
+          "volume": "1L",
+          "quantity": 24,
+          "unit_price": 24
+        }
+      ]
+    },
+    {
+      "po_number": "PO-DEMO-1002",
+      "supplier_id": "SUP-002",
+      "outlet": "OUTLET-A",
+      "order_date": "2026-09-11",
+      "status": "OPEN",
+      "lines": [
+        {
+          "sku": "BR-LAGER-340",
+          "product": "Karoo Lager",
+          "volume": "340ml",
+          "quantity": 120,
+          "unit_price": 16.9
+        },
+        {
+          "sku": "BR-IPA-440",
+          "product": "Karoo IPA",
+          "volume": "440ml",
+          "quantity": 48,
+          "unit_price": 24.5
+        }
+      ]
+    },
+    {
+      "po_number": "PO-DEMO-1003",
+      "supplier_id": "SUP-003",
+      "outlet": "OUTLET-A",
+      "order_date": "2026-09-12",
+      "status": "OPEN",
+      "lines": [
+        {
+          "sku": "SP-GIN-750",
+          "product": "Jozi Dry Gin",
+          "volume": "750ml",
+          "quantity": 12,
+          "unit_price": 189
+        },
+        {
+          "sku": "SP-VODKA-750",
+          "product": "Jozi Vodka",
+          "volume": "750ml",
+          "quantity": 12,
+          "unit_price": 165
+        },
+        {
+          "sku": "SP-WHISKY-750",
+          "product": "Jozi Blended Whisky",
+          "volume": "750ml",
+          "quantity": 6,
+          "unit_price": 245
+        }
+      ]
+    },
+    {
+      "po_number": "PO-DEMO-1004",
+      "supplier_id": "SUP-004",
+      "outlet": "OUTLET-B",
+      "order_date": "2026-09-12",
+      "status": "OPEN",
+      "lines": [
+        {
+          "sku": "WN-SB-750",
+          "product": "Cape Sauvignon Blanc",
+          "volume": "750ml",
+          "quantity": 24,
+          "unit_price": 78
+        },
+        {
+          "sku": "WN-CAB-750",
+          "product": "Cape Cabernet Sauvignon",
+          "volume": "750ml",
+          "quantity": 24,
+          "unit_price": 92
+        }
+      ]
+    }
+  ],
+  "goodsReceipts": [
+    {
+      "grn_number": "GRN-DEMO-5001",
+      "po_number": "PO-DEMO-1001",
+      "received_date": "2026-09-15",
+      "lines": [
+        {
+          "sku": "SD-COLA-330",
+          "received": 48,
+          "damaged": 0
+        },
+        {
+          "sku": "SD-TONIC-200",
+          "received": 48,
+          "damaged": 0
+        },
+        {
+          "sku": "SD-SODA-200",
+          "received": 36,
+          "damaged": 0
+        },
+        {
+          "sku": "SD-OJ-1L",
+          "received": 24,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "grn_number": "GRN-DEMO-5002",
+      "po_number": "PO-DEMO-1002",
+      "received_date": "2026-09-16",
+      "lines": [
+        {
+          "sku": "BR-LAGER-340",
+          "received": 96,
+          "damaged": 0
+        },
+        {
+          "sku": "BR-IPA-440",
+          "received": 48,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "grn_number": "GRN-DEMO-5003",
+      "po_number": "PO-DEMO-1003",
+      "received_date": "2026-09-16",
+      "lines": [
+        {
+          "sku": "SP-GIN-750",
+          "received": 12,
+          "damaged": 2
+        },
+        {
+          "sku": "SP-VODKA-750",
+          "received": 12,
+          "damaged": 0
+        },
+        {
+          "sku": "SP-WHISKY-750",
+          "received": 6,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "grn_number": "GRN-DEMO-5004",
+      "po_number": "PO-DEMO-1004",
+      "received_date": "2026-09-17",
+      "lines": [
+        {
+          "sku": "WN-SB-750",
+          "received": 24,
+          "damaged": 0
+        },
+        {
+          "sku": "WN-CAB-750",
+          "received": 0,
+          "damaged": 0,
+          "substituted_with": "WN-MERLOT-750"
+        }
+      ]
+    }
+  ],
+  "invoiceHistory": [
+    {
+      "supplier_vat": "4000000011",
+      "invoice_number": "HSD-2026-0871",
+      "invoice_date": "02 September 2026",
+      "total_due": 4312.2,
+      "status": "PAID"
+    },
+    {
+      "supplier_vat": "4000000033",
+      "invoice_number": "JSD-77120",
+      "invoice_date": "05 September 2026",
+      "total_due": 5698.35,
+      "status": "PAID"
+    },
+    {
+      "supplier_vat": "4000000022",
+      "invoice_number": "KCB-3301",
+      "invoice_date": "08 September 2026",
+      "total_due": 3667.02,
+      "status": "PAID"
+    }
+  ],
+  "stockParams": [
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SD-COLA-330",
+      "on_hand": 60,
+      "reorder_point": 48,
+      "reorder_qty": 48
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SD-TONIC-200",
+      "on_hand": 40,
+      "reorder_point": 24,
+      "reorder_qty": 48
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SD-SODA-200",
+      "on_hand": 30,
+      "reorder_point": 24,
+      "reorder_qty": 36
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SD-OJ-1L",
+      "on_hand": 12,
+      "reorder_point": 12,
+      "reorder_qty": 24
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "BR-LAGER-340",
+      "on_hand": 150,
+      "reorder_point": 120,
+      "reorder_qty": 120
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "BR-IPA-440",
+      "on_hand": 40,
+      "reorder_point": 24,
+      "reorder_qty": 48
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SP-GIN-750",
+      "on_hand": 10,
+      "reorder_point": 6,
+      "reorder_qty": 12
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SP-VODKA-750",
+      "on_hand": 9,
+      "reorder_point": 6,
+      "reorder_qty": 12
+    },
+    {
+      "outlet": "OUTLET-A",
+      "sku": "SP-WHISKY-750",
+      "on_hand": 5,
+      "reorder_point": 3,
+      "reorder_qty": 6
+    },
+    {
+      "outlet": "OUTLET-B",
+      "sku": "WN-SB-750",
+      "on_hand": 20,
+      "reorder_point": 12,
+      "reorder_qty": 24
+    },
+    {
+      "outlet": "OUTLET-B",
+      "sku": "WN-CAB-750",
+      "on_hand": 8,
+      "reorder_point": 12,
+      "reorder_qty": 24
+    }
+  ],
+  "recipes": [
+    {
+      "menu_item": "Gin & Tonic",
+      "components": [
+        {
+          "sku": "SP-GIN-750",
+          "ml": 25
+        },
+        {
+          "sku": "SD-TONIC-200",
+          "ml": 200
+        }
+      ]
+    },
+    {
+      "menu_item": "Vodka Soda",
+      "components": [
+        {
+          "sku": "SP-VODKA-750",
+          "ml": 25
+        },
+        {
+          "sku": "SD-SODA-200",
+          "ml": 200
+        }
+      ]
+    },
+    {
+      "menu_item": "Whisky (single)",
+      "components": [
+        {
+          "sku": "SP-WHISKY-750",
+          "ml": 25
+        }
+      ]
+    },
+    {
+      "menu_item": "Whisky (double)",
+      "components": [
+        {
+          "sku": "SP-WHISKY-750",
+          "ml": 50
+        }
+      ]
+    },
+    {
+      "menu_item": "Karoo Lager",
+      "components": [
+        {
+          "sku": "BR-LAGER-340",
+          "ml": 340
+        }
+      ]
+    }
+  ]
+}

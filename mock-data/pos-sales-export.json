@@ -1,0 +1,28 @@
+{
+  "_notice": "FICTIONAL MOCK of a POS sales export. Shape is illustrative only; no Oracle Simphony integration exists or is claimed.",
+  "outlet": "OUTLET-A",
+  "business_date_from": "2026-09-18",
+  "business_date_to": "2026-09-24",
+  "sales": [
+    {
+      "menu_item": "Gin & Tonic",
+      "qty": 160
+    },
+    {
+      "menu_item": "Vodka Soda",
+      "qty": 95
+    },
+    {
+      "menu_item": "Whisky (single)",
+      "qty": 70
+    },
+    {
+      "menu_item": "Whisky (double)",
+      "qty": 25
+    },
+    {
+      "menu_item": "Karoo Lager",
+      "qty": 210
+    }
+  ]
+}
