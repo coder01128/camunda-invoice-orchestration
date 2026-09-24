@@ -14,6 +14,7 @@ const CASES = {
   "05-exact-duplicate":     { end: "duplicate" },
   "06-totals-dont-add-up":  { end: "queried-invalid" },
   "07-near-duplicate":      { end: "queried",   approve: false, match: "MATCHED", aiFlagExpected: true },
+  "08-large-clean-order":   { end: "paid",      approve: true,  match: "MATCHED", tier: "director" },
 };
 
 (async () => {
@@ -54,6 +55,7 @@ const CASES = {
     const checks = [[endedAs === r.exp.end, `end=${endedAs}`]];
     if (r.exp.match) checks.push([m?.status === r.exp.match, `match=${m?.status}`]);
     if (r.exp.flagged) checks.push([ar?.flagged === true, `flagged=${ar?.flagged}`]);
+    if (r.exp.tier) { const tier = v("invoiceApproval")?.tier; checks.push([tier === r.exp.tier, `tier=${tier}`]); }
     const ok = checks.every(c => c[0]); if (!ok) failed++;
     console.log(`${ok ? "PASS" : "FAIL"}  ${r.name.padEnd(22)} ${checks.map(c => c[1]).join(" ")}` +
       (ai ? `  | AI risk=${ai.riskLevel} flags=${(ai.flags || []).map(f => f.type).join(",") || "none"}` : ""));

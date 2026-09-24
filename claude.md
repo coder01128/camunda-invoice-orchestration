@@ -35,6 +35,8 @@ This is the target architecture, not a build order. Nothing above gets built unt
 ## Current phase: full v1 build (smoke test PASSED 24 Sep 2026)
 Brad's call (24 Sep 2026): build all six processes, fully working, runnable on any Camunda 8 cluster via one setup script, public repo, Loom demo. Oracle POS stays mocked with clearly labelled sample data — no integration claimed.
 
+Status 24 Sep 2026: all seven processes (six + Supplier Query) built, deployed and passing e2e on SaaS (tests/run-*.js). Remaining: Loom video, local-cluster verification, real limits from head office. See README.md and docs/.
+
 ## Smoke test (historical — passed)
 A throwaway 4-node flow with zero domain logic, purely to confirm Claude Code can deploy to and drive this cluster end to end:
 

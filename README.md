@@ -67,7 +67,7 @@ Everything below ran live on Camunda 8.9 SaaS on 24 Sep 2026:
 | Suite | Result |
 |---|---|
 | `tests/run-approval-routing.js`: 8 cases (auto, manager, director, fail-safe, negative variance, 30s escalation, flagged, limits from cluster variable) | **8/8 pass** |
-| `tests/run-invoice-to-pay.js`: every demo invoice through to its end state, acting as each human | **all pass** (AI expectations reported separately, since model output is not deterministic) |
+| `tests/run-invoice-to-pay.js`: 8 demo invoices through to their end state (paid, queried, duplicate, invalid, director-only), acting as each human | **8/8 pass** (AI expectations reported separately, since model output is not deterministic) |
 | Signal chains: substitution → reorder; waste → reorder; stock count → reorder | verified |
 | Access control: the manager login sees only manager tasks, the director only director tasks | verified in Tasklist |
 | Local cluster (`c8ctl cluster start`) | **not yet verified** |
