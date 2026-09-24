@@ -1,0 +1,144 @@
+{
+  "id": "waste-writeoff",
+  "type": "default",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Claude Code",
+    "version": "1.0"
+  },
+  "schemaVersion": 16,
+  "components": [
+    {
+      "id": "Text_intro",
+      "type": "text",
+      "text": "### Log a waste / spoilage write-off\n\nWrite-offs are priced at cost and routed for approval before stock is adjusted. _Demo data: fictional products._"
+    },
+    {
+      "id": "Field_outlet",
+      "type": "select",
+      "key": "outlet",
+      "label": "Outlet",
+      "values": [
+        {
+          "label": "Outlet A",
+          "value": "OUTLET-A"
+        },
+        {
+          "label": "Outlet B",
+          "value": "OUTLET-B"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_sku",
+      "type": "select",
+      "key": "sku",
+      "label": "Product",
+      "values": [
+        {
+          "label": "House Cola 330ml",
+          "value": "SD-COLA-330"
+        },
+        {
+          "label": "Tonic Water 200ml",
+          "value": "SD-TONIC-200"
+        },
+        {
+          "label": "Soda Water 200ml",
+          "value": "SD-SODA-200"
+        },
+        {
+          "label": "Orange Juice 1L",
+          "value": "SD-OJ-1L"
+        },
+        {
+          "label": "Karoo Lager 340ml",
+          "value": "BR-LAGER-340"
+        },
+        {
+          "label": "Karoo IPA 440ml",
+          "value": "BR-IPA-440"
+        },
+        {
+          "label": "Jozi Dry Gin 750ml",
+          "value": "SP-GIN-750"
+        },
+        {
+          "label": "Jozi Vodka 750ml",
+          "value": "SP-VODKA-750"
+        },
+        {
+          "label": "Jozi Blended Whisky 750ml",
+          "value": "SP-WHISKY-750"
+        },
+        {
+          "label": "Cape Sauvignon Blanc 750ml",
+          "value": "WN-SB-750"
+        },
+        {
+          "label": "Cape Cabernet Sauvignon 750ml",
+          "value": "WN-CAB-750"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_qty",
+      "type": "number",
+      "key": "quantity",
+      "label": "Quantity (units)",
+      "validate": {
+        "required": true,
+        "min": 1
+      }
+    },
+    {
+      "id": "Field_reason",
+      "type": "select",
+      "key": "reason",
+      "label": "Reason",
+      "values": [
+        {
+          "label": "Breakage",
+          "value": "Breakage"
+        },
+        {
+          "label": "Spoilage / expired",
+          "value": "Spoilage / expired"
+        },
+        {
+          "label": "Spillage",
+          "value": "Spillage"
+        },
+        {
+          "label": "Other",
+          "value": "Other"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_loggedBy",
+      "type": "textfield",
+      "key": "loggedBy",
+      "label": "Logged by",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_notes",
+      "type": "textarea",
+      "key": "notes",
+      "label": "Notes"
+    }
+  ]
+}

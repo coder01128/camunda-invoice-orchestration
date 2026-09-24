@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_waste-writeoff" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Claude Code" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="waste-writeoff" name="Waste / Spoilage Write-off" isExecutable="true">
+    <bpmn:documentation>Started from Tasklist (start form waste-writeoff) or API with {outlet, sku, quantity, reason, loggedBy, notes}. Priced at cost from the mock product list, approved via Approval Routing on value, then broadcasts stock-level-changed.</bpmn:documentation>
+    <bpmn:startEvent id="Start_waste" name="Write-off logged">
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="waste-writeoff" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_Start_waste_FetchCost</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="FetchCost" name="Look up unit cost (mock ERP)" zeebe:modelerTemplate="io.camunda.connectors.HttpJson.v2" zeebe:modelerTemplateVersion="13" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE3LjAzMzUgOC45OTk5N0MxNy4wMzM1IDEzLjQ0NzUgMTMuNDI4MSAxNy4wNTI5IDguOTgwNjUgMTcuMDUyOUM0LjUzMzE2IDE3LjA1MjkgMC45Mjc3NjUgMTMuNDQ3NSAwLjkyNzc2NSA4Ljk5OTk3QzAuOTI3NzY1IDQuNTUyNDggNC41MzMxNiAwLjk0NzA4MyA4Ljk4MDY1IDAuOTQ3MDgzQzEzLjQyODEgMC45NDcwODMgMTcuMDMzNSA0LjU1MjQ4IDE3LjAzMzUgOC45OTk5N1oiIGZpbGw9IiM1MDU1NjIiLz4KPHBhdGggZD0iTTQuOTMxMjYgMTQuMTU3MUw2Ljc4MTA2IDMuNzE0NzFIMTAuMTM3NUMxMS4xOTE3IDMuNzE0NzEgMTEuOTgyNCAzLjk4MzIzIDEyLjUwOTUgNC41MjAyN0MxMy4wNDY1IDUuMDQ3MzYgMTMuMzE1IDUuNzMzNTggMTMuMzE1IDYuNTc4OTJDMTMuMzE1IDcuNDQ0MTQgMTMuMDcxNCA4LjE1NTIyIDEyLjU4NDEgOC43MTIxNUMxMi4xMDY3IDkuMjU5MTMgMTEuNDU1MyA5LjYzNzA1IDEwLjYyOTggOS44NDU5TDEyLjA2MTkgMTQuMTU3MUgxMC4zMzE1TDkuMDMzNjQgMTAuMDI0OUg3LjI0MzUxTDYuNTEyNTQgMTQuMTU3MUg0LjkzMTI2Wk03LjQ5NzExIDguNTkyODFIOS4yNDI0OEM5Ljk5ODMyIDguNTkyODEgMTAuNTkwMSA4LjQyMzc0IDExLjAxNzcgOC4wODU2MUMxMS40NTUzIDcuNzM3NTMgMTEuNjc0MSA3LjI2NTEzIDExLjY3NDEgNi42Njg0MkMxMS42NzQxIDYuMTkxMDYgMTEuNTI0OSA1LjgxODExIDExLjIyNjUgNS41NDk1OUMxMC45MjgyIDUuMjcxMTMgMTAuNDU1OCA1LjEzMTkgOS44MDkzNiA1LjEzMTlIOC4xMDg3NEw3LjQ5NzExIDguNTkyODFaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="noAuth" target="authentication.type" />
+          <zeebe:input source="GET" target="method" />
+          <zeebe:input source="=(if mockDataBaseUrl = null then &#34;https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data&#34; else mockDataBaseUrl) + &#34;/erp.json&#34;" target="url" />
+          <zeebe:input source="=false" target="storeResponse" />
+          <zeebe:input source="=false" target="followRedirects" />
+          <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
+          <zeebe:input source="=20" target="readTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="13" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.HttpJson.v2" />
+          <zeebe:header key="resultExpression" value="={erpProducts: response.body.products}" />
+          <zeebe:header key="retryBackoff" value="PT5S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_waste_FetchCost</bpmn:incoming>
+      <bpmn:outgoing>Flow_FetchCost_PriceWriteOff</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="PriceWriteOff" name="Price write-off">
+      <bpmn:documentation>FEEL note: inside a filter, a bare name resolves to the list item first, so the process variable sku is bound to wantedSku before filtering.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:script expression="={wantedSku: sku, p: (erpProducts[item.sku = wantedSku])[1],&#10;  outlet: outlet, sku: sku, product: p.product, quantity: quantity, unitCost: p.unit_cost,&#10;  value: decimal(quantity * p.unit_cost, 2), reason: reason, loggedBy: loggedBy, notes: notes}" resultVariable="writeOff" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FetchCost_PriceWriteOff</bpmn:incoming>
+      <bpmn:outgoing>Flow_PriceWriteOff_ApproveWriteOff</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:callActivity id="ApproveWriteOff" name="Approval Routing">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="approval-routing" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=writeOff.value" target="amount" />
+          <zeebe:input source="=&#34;waste&#34;" target="category" />
+          <zeebe:input source="=&#34;Write-off: &#34; + string(writeOff.quantity) + &#34; x &#34; + writeOff.product + &#34; (&#34; + writeOff.reason + &#34;), logged by &#34; + writeOff.loggedBy" target="flagReason" />
+          <zeebe:input source="=false" target="flagged" />
+          <zeebe:input source="=&#34;WASTE-&#34; + writeOff.outlet + &#34;-&#34; + writeOff.sku" target="sourceRef" />
+          <zeebe:input source="=&#34;Write-off: &#34; + writeOff.product" target="supplier" />
+          <zeebe:output source="=approvalOutcome" target="writeOffApproval" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PriceWriteOff_ApproveWriteOff</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApproveWriteOff_Gw_approved</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="Gw_approved" name="Approved?" default="Flow_Gw_approved_End_rejected">
+      <bpmn:incoming>Flow_ApproveWriteOff_Gw_approved</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gw_approved_StockAdjusted</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gw_approved_End_rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:intermediateThrowEvent id="StockAdjusted" name="Stock written off">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=[{sku: writeOff.sku, qtyChange: -writeOff.quantity}]" target="stockMovements" />
+          <zeebe:input source="=writeOff.outlet" target="outlet" />
+          <zeebe:input source="=&#34;waste-writeoff&#34;" target="source" />
+          <zeebe:input source="=&#34;WASTE-&#34; + writeOff.outlet + &#34;-&#34; + writeOff.sku" target="sourceRef" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gw_approved_StockAdjusted</bpmn:incoming>
+      <bpmn:outgoing>Flow_StockAdjusted_End_written</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="StockAdjusted_def" signalRef="Signal_stock-level-changed" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_written" name="Written off">
+      <bpmn:incoming>Flow_StockAdjusted_End_written</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_rejected" name="Write-off rejected">
+      <bpmn:incoming>Flow_Gw_approved_End_rejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_waste_FetchCost" sourceRef="Start_waste" targetRef="FetchCost" />
+    <bpmn:sequenceFlow id="Flow_FetchCost_PriceWriteOff" sourceRef="FetchCost" targetRef="PriceWriteOff" />
+    <bpmn:sequenceFlow id="Flow_PriceWriteOff_ApproveWriteOff" sourceRef="PriceWriteOff" targetRef="ApproveWriteOff" />
+    <bpmn:sequenceFlow id="Flow_ApproveWriteOff_Gw_approved" sourceRef="ApproveWriteOff" targetRef="Gw_approved" />
+    <bpmn:sequenceFlow id="Flow_Gw_approved_StockAdjusted" name="approved" sourceRef="Gw_approved" targetRef="StockAdjusted">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=writeOffApproval.approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gw_approved_End_rejected" name="rejected" sourceRef="Gw_approved" targetRef="End_rejected" />
+    <bpmn:sequenceFlow id="Flow_StockAdjusted_End_written" sourceRef="StockAdjusted" targetRef="End_written" />
+  </bpmn:process>
+  <bpmn:signal id="Signal_stock-level-changed" name="stock-level-changed" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_waste-writeoff">
+    <bpmndi:BPMNPlane id="BPMNPlane_waste-writeoff" bpmnElement="waste-writeoff">
+      <bpmndi:BPMNShape id="Start_waste_di" bpmnElement="Start_waste">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FetchCost_di" bpmnElement="FetchCost">
+        <dc:Bounds x="320" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="PriceWriteOff_di" bpmnElement="PriceWriteOff">
+        <dc:Bounds x="490" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApproveWriteOff_di" bpmnElement="ApproveWriteOff">
+        <dc:Bounds x="660" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_approved_di" bpmnElement="Gw_approved" isMarkerVisible="true">
+        <dc:Bounds x="855" y="125" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StockAdjusted_di" bpmnElement="StockAdjusted">
+        <dc:Bounds x="1032" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_written_di" bpmnElement="End_written">
+        <dc:Bounds x="1202" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_rejected_di" bpmnElement="End_rejected">
+        <dc:Bounds x="1032" y="272" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_waste_FetchCost_di" bpmnElement="Flow_Start_waste_FetchCost">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="320" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FetchCost_PriceWriteOff_di" bpmnElement="Flow_FetchCost_PriceWriteOff">
+        <di:waypoint x="420" y="150" />
+        <di:waypoint x="490" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PriceWriteOff_ApproveWriteOff_di" bpmnElement="Flow_PriceWriteOff_ApproveWriteOff">
+        <di:waypoint x="590" y="150" />
+        <di:waypoint x="660" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApproveWriteOff_Gw_approved_di" bpmnElement="Flow_ApproveWriteOff_Gw_approved">
+        <di:waypoint x="760" y="150" />
+        <di:waypoint x="855" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_StockAdjusted_di" bpmnElement="Flow_Gw_approved_StockAdjusted">
+        <di:waypoint x="905" y="150" />
+        <di:waypoint x="1032" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gw_approved_End_rejected_di" bpmnElement="Flow_Gw_approved_End_rejected">
+        <di:waypoint x="880" y="175" />
+        <di:waypoint x="880" y="290" />
+        <di:waypoint x="1032" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_StockAdjusted_End_written_di" bpmnElement="Flow_StockAdjusted_End_written">
+        <di:waypoint x="1068" y="150" />
+        <di:waypoint x="1202" y="150" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

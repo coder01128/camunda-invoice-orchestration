@@ -2,9 +2,10 @@
 const MOCK_BASE = `if mockDataBaseUrl = null then "https://raw.githubusercontent.com/coder01128/camunda-invoice-orchestration/main/mock-data" else mockDataBaseUrl`;
 
 const reorderCheck = `{
+  atOutlet: outlet,
   checks: for m in stockMovements return {
     sku: m.sku,
-    param: (erpStockParams[item.sku = m.sku and item.outlet = outlet])[1],
+    param: (erpStockParams[item.sku = m.sku and item.outlet = atOutlet])[1],
     level: if m.level != null then m.level else if param = null then null else param.on_hand + m.qtyChange
   },
   lines: for c in checks[item.param != null and item.level != null and item.level < item.param.reorder_point] return {
