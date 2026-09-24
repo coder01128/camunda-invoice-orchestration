@@ -1,0 +1,30 @@
+{
+  "_scenario": "Large clean order over the manager limit -> director only",
+  "supplier_name": "Jozi Spirits Distributors (fictional)",
+  "supplier_vat": "4000000033",
+  "invoice_number": "JSD-77201",
+  "invoice_date": "21 September 2026",
+  "due_date": "21 October 2026",
+  "po_number": "PO-DEMO-1005",
+  "items": [
+    {
+      "line_number": 1,
+      "product": "Jozi Blended Whisky",
+      "volume": "750ml",
+      "quantity": 60,
+      "unit_price": 245,
+      "line_total": 14700
+    },
+    {
+      "line_number": 2,
+      "product": "Jozi Dry Gin",
+      "volume": "750ml",
+      "quantity": 24,
+      "unit_price": 189,
+      "line_total": 4536
+    }
+  ],
+  "subtotal": 19236,
+  "vat_amount": 2885.4,
+  "total_due": 22121.4
+}

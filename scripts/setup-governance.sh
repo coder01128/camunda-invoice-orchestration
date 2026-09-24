@@ -42,6 +42,15 @@ for g in manager director creditors; do
                                            --resourceType=COMPONENT --resourceId=tasklist --permissions=ACCESS
 done
 
+if [ "${CREATE_LOCAL_USERS:-0}" = "1" ]; then
+  # Local clusters (c8ctl cluster start / c8 Run) use basic auth, so demo users can be created here.
+  # Not possible on SaaS, where users are invited through Console.
+  echo "Local demo users (password: demo)"
+  run "user demo-manager"  create user --username=demo-manager  --name="Demo Manager"  --email=demo-manager@example.com  --password=demo
+  run "user demo-director" create user --username=demo-director --name="Demo Director" --email=demo-director@example.com --password=demo
+  MANAGER_USERS="$MANAGER_USERS demo-manager"; DIRECTOR_USERS="$DIRECTOR_USERS demo-director"
+fi
+
 echo "Members"
 for u in $MANAGER_USERS;  do run "user -> manager"  assign user "$u" --to-group=manager;  done
 for u in $DIRECTOR_USERS; do run "user -> director" assign user "$u" --to-group=director; done

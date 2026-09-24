@@ -225,6 +225,29 @@
           "unit_price": 92
         }
       ]
+    },
+    {
+      "po_number": "PO-DEMO-1005",
+      "supplier_id": "SUP-003",
+      "outlet": "OUTLET-B",
+      "order_date": "2026-09-18",
+      "status": "OPEN",
+      "lines": [
+        {
+          "sku": "SP-WHISKY-750",
+          "product": "Jozi Blended Whisky",
+          "volume": "750ml",
+          "quantity": 60,
+          "unit_price": 245
+        },
+        {
+          "sku": "SP-GIN-750",
+          "product": "Jozi Dry Gin",
+          "volume": "750ml",
+          "quantity": 24,
+          "unit_price": 189
+        }
+      ]
     }
   ],
   "goodsReceipts": [
@@ -309,6 +332,23 @@
           "received": 0,
           "damaged": 0,
           "substituted_with": "WN-MERLOT-750"
+        }
+      ]
+    },
+    {
+      "grn_number": "GRN-DEMO-5005",
+      "po_number": "PO-DEMO-1005",
+      "received_date": "2026-09-21",
+      "lines": [
+        {
+          "sku": "SP-WHISKY-750",
+          "received": 60,
+          "damaged": 0
+        },
+        {
+          "sku": "SP-GIN-750",
+          "received": 24,
+          "damaged": 0
         }
       ]
     }
@@ -414,6 +454,20 @@
       "on_hand": 8,
       "reorder_point": 12,
       "reorder_qty": 24
+    },
+    {
+      "outlet": "OUTLET-B",
+      "sku": "SP-WHISKY-750",
+      "on_hand": 4,
+      "reorder_point": 3,
+      "reorder_qty": 6
+    },
+    {
+      "outlet": "OUTLET-B",
+      "sku": "SP-GIN-750",
+      "on_hand": 5,
+      "reorder_point": 6,
+      "reorder_qty": 12
     }
   ],
   "recipes": [
