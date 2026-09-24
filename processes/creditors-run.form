@@ -1,13 +1,13 @@
 {
-  "id": "creditors-run",
-  "type": "default",
   "executionPlatform": "Camunda Cloud",
   "executionPlatformVersion": "8.9.0",
   "exporter": {
-    "name": "Claude Code",
-    "version": "1.0"
+    "name": "Camunda Web Modeler",
+    "version": "f38b97d"
   },
   "schemaVersion": 16,
+  "id": "creditors-run",
+  "type": "default",
   "components": [
     {
       "id": "Text_pay",
