@@ -1,0 +1,39 @@
+{
+  "id": "approval-review",
+  "type": "default",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Claude Code", "version": "1.0" },
+  "schemaVersion": 16,
+  "components": [
+    {
+      "id": "Text_summary",
+      "type": "text",
+      "text": "### Approval required\n\n**Reference:** {{sourceRef}}\n\n**Supplier / source:** {{supplier}}\n\n**Amount:** R {{amount}}\n\n**Category:** {{category}}\n\n**Why flagged:** {{flagReason}}\n\n_Limits in use: {{limitsSource}}_"
+    },
+    {
+      "id": "Field_decision",
+      "type": "radio",
+      "key": "decision",
+      "label": "Decision",
+      "values": [
+        { "label": "Approve", "value": "approve" },
+        { "label": "Reject", "value": "reject" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_approver",
+      "type": "textfield",
+      "key": "approver",
+      "label": "Your name",
+      "validate": { "required": true }
+    },
+    {
+      "id": "Field_comment",
+      "type": "textarea",
+      "key": "comment",
+      "label": "Comment"
+    }
+  ]
+}

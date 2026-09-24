@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="Definitions_approval_tier"
+             name="Approval Tier"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Claude Code"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.8.0">
+  <!--
+    Approval tier decision. Contains NO business figures on purpose.
+    Limits come from the caller as the variable `approvalLimits`:
+      { "autoApproveMax": <number>, "managerMax": <number> }
+    Real values are pending from head office. Until they are supplied,
+    rule 1 fails safe: every item goes to director review, nothing auto-approves.
+    The category column is in place for per-category rules once real
+    categories and limits are known; today every rule matches any category.
+  -->
+  <decision id="approval-tier" name="Approval tier">
+    <decisionTable id="DecisionTable_approval_tier" hitPolicy="FIRST">
+      <input id="Input_limits_configured" label="Limits configured">
+        <inputExpression id="InputExpression_limits_configured" typeRef="boolean">
+          <text>approvalLimits != null and approvalLimits.autoApproveMax != null and approvalLimits.managerMax != null</text>
+        </inputExpression>
+      </input>
+      <input id="Input_amount" label="Amount (absolute)">
+        <inputExpression id="InputExpression_amount" typeRef="number">
+          <text>abs(amount)</text>
+        </inputExpression>
+      </input>
+      <input id="Input_category" label="Category">
+        <inputExpression id="InputExpression_category" typeRef="string">
+          <text>category</text>
+        </inputExpression>
+      </input>
+      <output id="Output_tier" label="Approval tier" name="approvalTier" typeRef="string" />
+      <rule id="Rule_no_limits">
+        <description>Fail safe: limits not supplied, never auto-approve</description>
+        <inputEntry id="Entry_no_limits_configured"><text>false</text></inputEntry>
+        <inputEntry id="Entry_no_limits_amount"><text>-</text></inputEntry>
+        <inputEntry id="Entry_no_limits_category"><text>-</text></inputEntry>
+        <outputEntry id="Out_no_limits"><text>"director"</text></outputEntry>
+      </rule>
+      <rule id="Rule_auto">
+        <description>Within auto-approve limit</description>
+        <inputEntry id="Entry_auto_configured"><text>true</text></inputEntry>
+        <inputEntry id="Entry_auto_amount"><text>&lt;= approvalLimits.autoApproveMax</text></inputEntry>
+        <inputEntry id="Entry_auto_category"><text>-</text></inputEntry>
+        <outputEntry id="Out_auto"><text>"auto"</text></outputEntry>
+      </rule>
+      <rule id="Rule_manager">
+        <description>Within manager limit</description>
+        <inputEntry id="Entry_manager_configured"><text>true</text></inputEntry>
+        <inputEntry id="Entry_manager_amount"><text>&lt;= approvalLimits.managerMax</text></inputEntry>
+        <inputEntry id="Entry_manager_category"><text>-</text></inputEntry>
+        <outputEntry id="Out_manager"><text>"manager"</text></outputEntry>
+      </rule>
+      <rule id="Rule_director">
+        <description>Above manager limit, or amount missing</description>
+        <inputEntry id="Entry_director_configured"><text>-</text></inputEntry>
+        <inputEntry id="Entry_director_amount"><text>-</text></inputEntry>
+        <inputEntry id="Entry_director_category"><text>-</text></inputEntry>
+        <outputEntry id="Out_director"><text>"director"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_approval_tier">
+      <dmndi:DMNShape id="DMNShape_approval_tier" dmnElementRef="approval-tier">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

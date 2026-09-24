@@ -1,0 +1,8 @@
+# Camunda credentials — live only in the c8ctl profile store, never in the repo
+*.env
+.env*
+*-env.sh
+
+# Per-run instance keys written by test scripts
+.last-run-keys
+*.stackdump

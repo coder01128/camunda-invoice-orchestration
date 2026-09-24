@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+                  id="Definitions_approval_routing"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Claude Code"
+                  modeler:executionPlatform="Camunda Cloud"
+                  modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="approval-routing" name="Approval Routing" isExecutable="true">
+    <bpmn:documentation>Shared call activity. In: amount, category, flagReason, approvalLimits {autoApproveMax, managerMax}, optional escalationTimeout (ISO 8601 duration, default PT24H). Out: approvalOutcome {approved, approver, tier, escalated, comment}.</bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_approval" name="Approval requested">
+      <bpmn:outgoing>Flow_start_decide</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:businessRuleTask id="DetermineTier" name="Determine approval tier">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="approval-tier" resultVariable="approvalTier" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_start_decide</bpmn:incoming>
+      <bpmn:outgoing>Flow_decide_gateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="Gateway_tier" name="Tier?" default="Flow_to_director">
+      <bpmn:incoming>Flow_decide_gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_to_auto</bpmn:outgoing>
+      <bpmn:outgoing>Flow_to_manager</bpmn:outgoing>
+      <bpmn:outgoing>Flow_to_director</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="AutoApprove" name="Auto-approve">
+      <bpmn:extensionElements>
+        <zeebe:script expression="={approved: true, approver: &#34;system:auto-approve&#34;, tier: &#34;auto&#34;, escalated: false, comment: null}" resultVariable="approvalOutcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_to_auto</bpmn:incoming>
+      <bpmn:outgoing>Flow_auto_merge</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:userTask id="ManagerReview" name="Manager review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="approval-review" />
+        <zeebe:assignmentDefinition candidateGroups="manager" />
+        <zeebe:ioMapping>
+          <zeebe:output source="={approved: if decision = null then approved else decision = &#34;approve&#34;, approver: approver, tier: &#34;manager&#34;, escalated: false, comment: comment}" target="approvalOutcome" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_to_manager</bpmn:incoming>
+      <bpmn:outgoing>Flow_manager_merge</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="ManagerTimeout" name="No response" cancelActivity="true" attachedToRef="ManagerReview">
+      <bpmn:outgoing>Flow_escalate</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_manager_timeout">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=if escalationTimeout != null then escalationTimeout else "PT24H"</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:userTask id="DirectorReview" name="Director review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="approval-review" />
+        <zeebe:assignmentDefinition candidateGroups="director" />
+        <zeebe:ioMapping>
+          <zeebe:output source="={approved: if decision = null then approved else decision = &#34;approve&#34;, approver: approver, tier: &#34;director&#34;, escalated: approvalTier = &#34;manager&#34;, comment: comment}" target="approvalOutcome" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_join_director</bpmn:incoming>
+      <bpmn:outgoing>Flow_director_merge</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_director_join">
+      <bpmn:incoming>Flow_to_director</bpmn:incoming>
+      <bpmn:incoming>Flow_escalate</bpmn:incoming>
+      <bpmn:outgoing>Flow_join_director</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_merge">
+      <bpmn:incoming>Flow_auto_merge</bpmn:incoming>
+      <bpmn:incoming>Flow_manager_merge</bpmn:incoming>
+      <bpmn:incoming>Flow_director_merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_merge_end</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_approval" name="Decision made">
+      <bpmn:incoming>Flow_merge_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_start_decide" sourceRef="StartEvent_approval" targetRef="DetermineTier" />
+    <bpmn:sequenceFlow id="Flow_decide_gateway" sourceRef="DetermineTier" targetRef="Gateway_tier" />
+    <bpmn:sequenceFlow id="Flow_to_auto" name="auto" sourceRef="Gateway_tier" targetRef="AutoApprove">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approvalTier = "auto"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_to_manager" name="manager" sourceRef="Gateway_tier" targetRef="ManagerReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approvalTier = "manager"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_to_director" name="director" sourceRef="Gateway_tier" targetRef="Gateway_director_join" />
+    <bpmn:sequenceFlow id="Flow_escalate" sourceRef="ManagerTimeout" targetRef="Gateway_director_join" />
+    <bpmn:sequenceFlow id="Flow_join_director" sourceRef="Gateway_director_join" targetRef="DirectorReview" />
+    <bpmn:sequenceFlow id="Flow_auto_merge" sourceRef="AutoApprove" targetRef="Gateway_merge" />
+    <bpmn:sequenceFlow id="Flow_manager_merge" sourceRef="ManagerReview" targetRef="Gateway_merge" />
+    <bpmn:sequenceFlow id="Flow_director_merge" sourceRef="DirectorReview" targetRef="Gateway_merge" />
+    <bpmn:sequenceFlow id="Flow_merge_end" sourceRef="Gateway_merge" targetRef="EndEvent_approval" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_approval_routing">
+    <bpmndi:BPMNPlane id="BPMNPlane_approval_routing" bpmnElement="approval-routing">
+      <bpmndi:BPMNShape id="StartEvent_approval_di" bpmnElement="StartEvent_approval">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="136" y="243" width="68" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DetermineTier_di" bpmnElement="DetermineTier">
+        <dc:Bounds x="240" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_tier_di" bpmnElement="Gateway_tier" isMarkerVisible="true">
+        <dc:Bounds x="400" y="193" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="360" y="203" width="30" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AutoApprove_di" bpmnElement="AutoApprove">
+        <dc:Bounds x="520" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ManagerReview_di" bpmnElement="ManagerReview">
+        <dc:Bounds x="520" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_director_join_di" bpmnElement="Gateway_director_join" isMarkerVisible="true">
+        <dc:Bounds x="565" y="340" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DirectorReview_di" bpmnElement="DirectorReview">
+        <dc:Bounds x="540" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_merge_di" bpmnElement="Gateway_merge" isMarkerVisible="true">
+        <dc:Bounds x="700" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_approval_di" bpmnElement="EndEvent_approval">
+        <dc:Bounds x="800" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="784" y="243" width="68" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ManagerTimeout_di" bpmnElement="ManagerTimeout">
+        <dc:Bounds x="572" y="240" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="614" y="276" width="62" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_start_decide_di" bpmnElement="Flow_start_decide">
+        <di:waypoint x="188" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_decide_gateway_di" bpmnElement="Flow_decide_gateway">
+        <di:waypoint x="340" y="218" />
+        <di:waypoint x="400" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_to_auto_di" bpmnElement="Flow_to_auto">
+        <di:waypoint x="425" y="193" />
+        <di:waypoint x="425" y="100" />
+        <di:waypoint x="520" y="100" />
+        <bpmndi:BPMNLabel><dc:Bounds x="440" y="82" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_to_manager_di" bpmnElement="Flow_to_manager">
+        <di:waypoint x="450" y="218" />
+        <di:waypoint x="520" y="218" />
+        <bpmndi:BPMNLabel><dc:Bounds x="460" y="200" width="44" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_to_director_di" bpmnElement="Flow_to_director">
+        <di:waypoint x="425" y="243" />
+        <di:waypoint x="425" y="365" />
+        <di:waypoint x="565" y="365" />
+        <bpmndi:BPMNLabel><dc:Bounds x="440" y="347" width="40" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_escalate_di" bpmnElement="Flow_escalate">
+        <di:waypoint x="590" y="276" />
+        <di:waypoint x="590" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_join_director_di" bpmnElement="Flow_join_director">
+        <di:waypoint x="590" y="390" />
+        <di:waypoint x="590" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_auto_merge_di" bpmnElement="Flow_auto_merge">
+        <di:waypoint x="620" y="100" />
+        <di:waypoint x="725" y="100" />
+        <di:waypoint x="725" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_manager_merge_di" bpmnElement="Flow_manager_merge">
+        <di:waypoint x="620" y="218" />
+        <di:waypoint x="700" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_director_merge_di" bpmnElement="Flow_director_merge">
+        <di:waypoint x="640" y="480" />
+        <di:waypoint x="725" y="480" />
+        <di:waypoint x="725" y="243" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_merge_end_di" bpmnElement="Flow_merge_end">
+        <di:waypoint x="750" y="218" />
+        <di:waypoint x="800" y="218" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

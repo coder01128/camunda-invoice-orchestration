@@ -1,0 +1,1 @@
+{"amount":15,"category":"test","flagReason":"smoke: escalation","escalationTimeout":"PT30S","approvalLimits":{"autoApproveMax":10,"managerMax":20}}
