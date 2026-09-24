@@ -11,7 +11,7 @@ const SYSTEM_PROMPT = "You are an accounts-payable assistant at the head office 
 const USER_PROMPT = String.raw`="Review this supplier invoice before payment.\n\nINVOICE (extracted from the supplier PDF):\n" + string(invoice)
  + "\n\nDETERMINISTIC 3-WAY MATCH (invoice vs purchase order vs goods received note), already computed:\n" + string(matchResult)
  + "\n\nPREVIOUS INVOICES FROM THIS SUPPLIER:\n" + string(duplicateCheck.supplierHistory)
- + "\n\nCheck for: possible duplicates or near-duplicates of previous invoices (same amount, same items, consecutive numbers, close dates); unusual prices or quantities; lines that do not fit this supplier; anything else worth querying. Do not simply restate the 3-way-match findings; add a flag only if you have something new to say about them. Return JSON only."`;
+ + "\n\nCheck for: possible duplicates of previous invoices (flag POSSIBLE_DUPLICATE only when the total or the full set of items and quantities closely matches a previous invoice; different products, quantities or totals mean a separate order); unusual prices or quantities; lines that do not fit this supplier; anything else worth querying. Do not simply restate the 3-way-match findings; add a flag only if you have something new to say about them. Return JSON only."`;
 
 const SCHEMA = `={type: "object", required: ["riskLevel", "flags", "summary"], properties: {
   riskLevel: {type: "string", enum: ["low", "medium", "high"]},
