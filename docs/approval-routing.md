@@ -1,72 +1,73 @@
 # Approval Routing
 
-Shared call activity. Every process that needs sign-off (Invoice-to-Pay, Pour-Cost
-Reconciliation, Waste/Spoilage Write-off) calls into this one instead of building its own.
+A shared call activity. Invoice-to-Pay, Waste Write-off, Pour-Cost Reconciliation and Stock Reorder all call into it, so none of them builds its own approval logic.
 
 | File | What it is |
 |---|---|
 | `processes/approval-routing.bpmn` | Process `approval-routing` |
 | `processes/approval-tier.dmn` | Decision `approval-tier` (called by the process) |
-| `tests/approval-routing/` | Synthetic inputs used to test every path |
+| `processes/approval-review.form` | Tasklist form for Manager / Director review |
+| `tests/approval-routing/` | Synthetic inputs and expectations for every path |
 
 ## Flow
-
-Start → **Determine approval tier** (DMN) → gateway:
-- `auto` → **Auto-approve** (script task) → end
-- `manager` → **Manager review** (user task, group `manager`). If nobody responds within the
-  escalation timeout, a boundary timer cancels it and escalates to director review
-- `director` (default) → **Director review** (user task, group `director`) → end
+Start → **Resolve approval limits** → **Determine approval tier** (DMN) → gateway:
+- `auto` → **Auto-approve** → end
+- `manager` → **Manager review** (group `manager`). If nobody responds within the escalation timeout, a timer cancels it and escalates to director review.
+- `director` (default) → **Director review** (group `director`) → end
 
 ## Contract
 
-**In** (process variables supplied by the caller):
+**In** (variables from the caller):
 
 | Variable | Type | Notes |
 |---|---|---|
-| `amount` | number | Invoice amount or variance. Tiering uses `abs(amount)`, so a negative variance routes like a positive one |
-| `category` | string | Passed into the DMN. No rule uses it yet (see open decisions) |
-| `flagReason` | string | Why this needs approval. Display only, not used in routing |
-| `approvalLimits` | `{autoApproveMax, managerMax}` | **Real values not yet known.** If missing, everything goes to director review |
-| `escalationTimeout` | ISO 8601 duration | Optional. Defaults to `PT24H` (the agreed 24h). Tests override it to `PT30S` |
+| `amount` | number | Amount or variance. Tiering uses `abs(amount)`. |
+| `category` | string | `supplier-invoice`, `waste`, `pour-cost` or `stock-requisition`. No rule uses it yet. |
+| `flagReason` | string | Why this needs approval. Shown on the review form. |
+| `flagged` | boolean | `true` when a 3-way-match discrepancy or AI flag exists. **Flagged items are never auto-approved.** |
+| `approvalLimits` | `{autoApproveMax, managerMax}` | *Optional override.* The default is the admin-managed **cluster variable** `approvalLimits`. |
+| `escalationTimeout` | ISO 8601 duration | Optional. Defaults to `PT24H`. Tests use `PT30S`. |
+| `sourceRef`, `supplier` | string | Shown on the form. |
 
-**Reviewer completes the user task with:** `decision` (`"approve"`/`"reject"`, from the Tasklist form `approval-review.form`) or `approved` (boolean, for CLI/API use), plus `approver` (string) and `comment` (string, optional).
+**The reviewer completes the task with:** `decision` (`approve` / `reject`, from the form) or `approved` (boolean, for CLI/API use), plus `approver` and `comment`.
 
-**Optional display variables** shown on the form: `sourceRef`, `supplier`, `limitsSource`.
+**Out:** `approvalOutcome` = `{approved, approver, tier, escalated, comment}`. `escalated` is `true` only when the manager review timed out and the director decided.
 
-**Out:** `approvalOutcome` = `{approved, approver, tier, escalated, comment}`
-- `tier`: `auto` / `manager` / `director`
-- `escalated`: `true` only when a manager review timed out and a director decided
+## How the limits are resolved
+1. `approvalLimits` passed by the caller, if present
+2. otherwise the cluster variable `camunda.vars.env.approvalLimits`, set by `scripts/set-cluster-variable.mjs` from `config/approval-limits.demo.json`
+3. otherwise nothing: the DMN fails safe to **director**, and nothing is auto-approved
+
+`limitsSource` records which of these applied, and the review form shows it, so a reviewer always knows whether the limits in use are demo values.
 
 ## DMN rules (hit policy FIRST)
 
-| # | Limits configured | abs(amount) | Category | Tier |
-|---|---|---|---|---|
-| 1 | false | - | - | director (fail-safe) |
-| 2 | true | `<= approvalLimits.autoApproveMax` | - | auto |
-| 3 | true | `<= approvalLimits.managerMax` | - | manager |
-| 4 | - | - | - | director |
+| # | Limits configured | abs(amount) | Flagged | Category | Tier |
+|---|---|---|---|---|---|
+| 1 | false | - | - | - | director (fail-safe) |
+| 2 | true | `<= approvalLimits.autoApproveMax` | false | - | auto |
+| 3 | true | `<= approvalLimits.managerMax` | - | - | manager |
+| 4 | - | - | - | - | director |
 
-The table contains no numbers. The limits are variables.
+The table contains no numbers; the limits are variables. A flagged item under the auto limit falls through to rule 3 (manager).
 
-## Tested (24 Sep 2026, SaaS cluster, synthetic limits 10 / 20)
+## Tested: `node tests/run-approval-routing.js` (8/8 pass, 24 Sep 2026)
 
-| Case | Input | Routed to | Outcome |
-|---|---|---|---|
-| A | no limits, 5 | director | fail-safe held, no auto-approve |
-| B | 5 | auto | COMPLETED, no human task |
-| C | 15 | manager | approved |
-| D | 25 | director | rejected (`approved: false`) |
-| E | −15 | manager | approved (the absolute value was used) |
-| F | 15, `PT30S` timeout | manager → director at +30s | manager task CANCELED, `escalated: true` |
-
-All six COMPLETED, 0 incidents.
+| Case | Input | Routed to |
+|---|---|---|
+| a | empty limits `{}` | director (fail-safe) |
+| b | 5 (limits 10/20) | auto |
+| c | 15 | manager, approved |
+| d | 25 | director, rejected |
+| e | −15 | manager (the absolute value is used) |
+| f | 15, `PT30S` | manager, then escalated to director |
+| g | 5, flagged | manager (not auto) |
+| h | 5, no override | auto, using the cluster-variable limits |
 
 ## Open decisions (need Brad or head office)
-
-1. **Real limits.** `autoApproveMax` and `managerMax` values, and whether they differ per category.
-2. **Categories.** The real category list. Per-category rows get added to the DMN once it is known.
-3. **Fail-safe tier.** Items with no limits configured currently go to **director**. Should it be manager instead?
-4. **Director escalation.** Director review has no timeout. Is there a tier above director (e.g. FD/CEO), or should it just remind?
-5. **Does `flagReason` affect routing?** For example, should an AI-flagged duplicate always need a human even under the auto limit? Right now it doesn't.
-6. **Approver identity.** The reviewer passes `approver` in by hand. Real use should take it from the logged-in Tasklist user.
-7. **Form content.** `approval-review.form` is a working first version. It still needs sign-off on what reviewers actually need to see (line items, PO/GRN refs, attachments).
+1. **Real limits:** `autoApproveMax` and `managerMax`, and whether they vary by category.
+2. **Categories:** the real category list. Per-category rows get added to the DMN once it's known.
+3. **Fail-safe tier:** director today. Should it be manager?
+4. **Director escalation:** is there a tier above director, or should it just send a reminder?
+5. **Flag policy:** any AI or match flag currently forces a human. Should a *low-risk* AI flag be allowed through?
+6. **Approver identity:** currently typed into the form. Production should take it from the Tasklist login.
