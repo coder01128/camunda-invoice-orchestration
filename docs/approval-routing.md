@@ -5,9 +5,9 @@ Reconciliation, Waste/Spoilage Write-off) calls into this one instead of buildin
 
 | File | What it is |
 |---|---|
-| `approval-routing.bpmn` | Process `approval-routing` |
-| `approval-tier.dmn` | Decision `approval-tier` (called by the process) |
-| `test-fixtures/` | Synthetic inputs used to test every path |
+| `processes/approval-routing.bpmn` | Process `approval-routing` |
+| `processes/approval-tier.dmn` | Decision `approval-tier` (called by the process) |
+| `tests/approval-routing/` | Synthetic inputs used to test every path |
 
 ## Flow
 

@@ -14,9 +14,9 @@ LIMITS=$(tr -d '\n' < demo-limits.json)
 LIMITS_SOURCE="DEMO VALUES - not head-office limits"
 
 echo "Deploying approval-routing (process, decision, form)..."
-c8ctl deploy ../../approval-routing/approval-routing.bpmn \
-             ../../approval-routing/approval-tier.dmn \
-             ../../approval-routing/approval-review.form $PROFILE 2>&1 | grep -v camunda-sdk
+c8ctl deploy ../../processes/approval-routing.bpmn \
+             ../../processes/approval-tier.dmn \
+             ../../processes/approval-review.form $PROFILE 2>&1 | grep -v camunda-sdk
 
 echo
 echo "Starting demo instances..."
