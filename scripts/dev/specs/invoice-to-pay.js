@@ -41,7 +41,7 @@ module.exports = {
         "provider.anthropic.authentication.apiKey": "{{secrets.ANTHROPIC_API_KEY}}",
         "provider.anthropic.model.model": "claude-sonnet-5",
         "provider.anthropic.model.parameters.maxTokens": "2000",
-        "data.systemPrompt.prompt": SYSTEM_PROMPT,
+        "data.systemPrompt.prompt": `="${SYSTEM_PROMPT}"`,
         "data.userPrompt.prompt": USER_PROMPT,
         "data.memory.storage.type": "in-process",
         "data.limits.maxModelCalls": "3",
