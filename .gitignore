@@ -6,3 +6,7 @@
 # Per-run instance keys written by test scripts
 .last-run-keys
 *.stackdump
+
+# GitHub App / other private keys
+*.pem
+*.key
