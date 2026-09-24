@@ -23,6 +23,7 @@ PROFILE="--profile=${C8_PROFILE:-smoke-test}"
 [ -f governance.local.env ] && source governance.local.env
 MANAGER_USERS="${MANAGER_USERS:-}"
 DIRECTOR_USERS="${DIRECTOR_USERS:-}"
+CREDITORS_USERS="${CREDITORS_USERS:-}"
 
 run() {  # run a c8ctl command, print a one-line result, tolerate "already exists"
   local label="$1"; shift
@@ -54,6 +55,7 @@ fi
 echo "Members"
 for u in $MANAGER_USERS;  do run "user -> manager"  assign user "$u" --to-group=manager;  done
 for u in $DIRECTOR_USERS; do run "user -> director" assign user "$u" --to-group=director; done
-[ -z "$MANAGER_USERS$DIRECTOR_USERS" ] && echo "  (none configured — set them in scripts/governance.local.env)"
+for u in $CREDITORS_USERS; do run "user -> creditors" assign user "$u" --to-group=creditors; done
+[ -z "$MANAGER_USERS$DIRECTOR_USERS$CREDITORS_USERS" ] && echo "  (none configured — set them in scripts/governance.local.env)"
 
 exit $FAILED
