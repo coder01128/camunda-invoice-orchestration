@@ -10,3 +10,6 @@
 # GitHub App / other private keys
 *.pem
 *.key
+
+# Local chat handoff notes (contain logins/IDs)
+HANDOFF.md
